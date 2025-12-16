@@ -1,0 +1,2 @@
+BB_INVENTORY_PATH = "./"
+BB_TMP_PATH = ".bbui"

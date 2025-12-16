@@ -1,0 +1,15 @@
+[fn_management]
+mgt1
+
+[fn_compute:children]
+fn_gpu
+fn_cpu
+
+[fn_gpu]
+g00[1:3]
+
+[fn_cpu]
+c00[1:4]
+
+[fn_cpu:vars]
+nb_sockets=2
