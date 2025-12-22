@@ -3,13 +3,14 @@ from pathlib import Path
 from bbui.inventory.host import Host
 from bbui.inventory.group import Group
 from bbui.utils.parser import parse_ini
+import bbui.utils.env as bbenv
 
 from yaml import safe_load as yload , dump
 
 # Globals
 class Inventory() : 
     
-    def __init__(self, p = "/etc/bluebanquise", crawl : bool = True) :
+    def __init__(self, p = bbenv.WORKDIR, crawl : bool = True) :
         self.hosts = {}
         self.groups = {}
         self.p = Path(p)
@@ -18,19 +19,20 @@ class Inventory() :
             self.crawl_inventory()
 
     def crawl_inventory(self):
-        p_inventory = self.p / 'cluster' / 'nodes'
+        p_inventory = self.p / bbenv.BB_CLUSTER_DIR_NAME / bbenv.BB_NODES_DIR_NAME
         for p in p_inventory.glob('*.y*ml'):
             with open(p) as f:
                 inv = yload(f)
                 for k, v in inv['all']['hosts'].items():
                     self.hosts[k] = Host(k, v)
-        p_inventory = self.p / 'cluster' / 'groups'
+
+        p_inventory = self.p / bbenv.BB_CLUSTER_DIR_NAME / bbenv.BB_GROUPS_DIR_NAME
         for p in p_inventory.glob('**/*'):
             groups = parse_ini(str(p))
             for k, v in groups.items():
                 for h in v['hosts']:
                     if h not in self.hosts.keys():
-                        self.hosts[h] = Host(h)
+                        self.hosts[h] = Host(h, {})
                 self.groups[k] = Group(k, v['hosts'],v['groupvars'],v['children'])
         
     def __str__(self) -> str:
@@ -46,10 +48,9 @@ class Inventory() :
         
         for k, v in self.groups.items():
             out['groups'][k] = v.to_dict()
-
+            
         return out
 
 if __name__ == "__main__":
-    i = Inventory(p='/workspaces/bb-tui/etc/bluebanquise/inventory/')
-
+    i = Inventory(p=bbenv.WORKDIR)
     print(i)

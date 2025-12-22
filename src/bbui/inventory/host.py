@@ -1,15 +1,16 @@
 from bbui.inventory.interface import InterfaceEthernet, InterfaceInfiniband
 from yaml import dump
+from typing import Any
 
 class Host():
-    def __init__(self, hostname : str, v : dict = {}):
+    def __init__(self, hostname : str, v : dict[str,Any] = {}):
         self.hostname = hostname
-        self.vars = v     
+        self.vars = v
     
     def __str__(self) -> str:
         return dump(self.to_dict())
 
-    def to_dict(self) -> dict:       
+    def to_dict(self) -> dict:
         return self.vars 
 
 class BbHost(Host):
