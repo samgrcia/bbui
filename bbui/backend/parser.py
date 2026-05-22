@@ -365,10 +365,8 @@ def load_inventory_dir(directory: str | Path) -> Inventory:
     return inventory
 
 
-def dump_inventory(inventory: Inventory, path: str | Path) -> None:
-    """Serialize *inventory* to an Ansible-compatible YAML file."""
-    filepath = Path(path)
-
+def dump_inventory_yaml(inventory: Inventory, filepath: Path) -> None:
+    """Write *inventory* as an Ansible YAML inventory file."""
     def _build_group(group_name: str) -> dict[str, Any]:
         group = inventory._groups.get(group_name)
         if group is None:
@@ -391,3 +389,74 @@ def dump_inventory(inventory: Inventory, path: str | Path) -> None:
 
     with filepath.open("w", encoding="utf-8") as fh:
         yaml.dump(output, fh, default_flow_style=False, allow_unicode=True)
+
+
+def dump_inventory_ini(inventory: Inventory, filepath: Path) -> None:
+    """Write *inventory* as an Ansible INI inventory file.
+
+    Layout produced:
+    - One section ``[group_name]`` per group (top-level groups first,
+      then children, alphabetically within each tier).
+    - Inline ``key=value`` pairs for host vars.
+    - ``[group_name:vars]`` sections for group vars.
+    - ``[group_name:children]`` sections for child relationships.
+    """
+    lines: list[str] = []
+
+    # Collect all groups, parents first
+    all_children: set[str] = set()
+    for g in inventory.list_groups():
+        all_children.update(g.children)
+    ordered = (
+        [g for g in sorted(inventory.list_groups(), key=lambda g: g.name) if g.name not in all_children]
+        + [g for g in sorted(inventory.list_groups(), key=lambda g: g.name) if g.name in all_children]
+    )
+
+    for group in ordered:
+        # [group]
+        lines.append(f"[{group.name}]")
+        for hostname in sorted(group.hosts):
+            try:
+                hv = inventory.get_host(hostname).vars
+            except KeyError:
+                hv = {}
+            if hv:
+                vars_str = " ".join(f"{k}={v}" for k, v in sorted(hv.items()))
+                lines.append(f"{hostname} {vars_str}")
+            else:
+                lines.append(hostname)
+        lines.append("")
+
+        # [group:vars]
+        if group.vars:
+            lines.append(f"[{group.name}:vars]")
+            for k, v in sorted(group.vars.items()):
+                lines.append(f"{k}={v}")
+            lines.append("")
+
+        # [group:children]
+        if group.children:
+            lines.append(f"[{group.name}:children]")
+            for child in sorted(group.children):
+                lines.append(child)
+            lines.append("")
+
+    with filepath.open("w", encoding="utf-8") as fh:
+        fh.write("\n".join(lines).rstrip() + "\n")
+
+
+def dump_inventory(inventory: Inventory, path: str | Path) -> None:
+    """Serialize *inventory* back to disk, preserving the original file format.
+
+    The format is detected from the file extension (or content sniffing for
+    extension-less files), so a ``.ini`` file is rewritten as INI and a
+    ``.yml`` / ``.yaml`` file as YAML.
+    """
+    filepath = Path(path)
+    fmt = _detect_format(filepath) if filepath.exists() else (
+        "ini" if filepath.suffix.lower() in INI_SUFFIXES else "yaml"
+    )
+    if fmt == "ini":
+        dump_inventory_ini(inventory, filepath)
+    else:
+        dump_inventory_yaml(inventory, filepath)

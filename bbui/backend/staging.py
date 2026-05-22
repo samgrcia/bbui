@@ -37,6 +37,7 @@ from pathlib import Path
 from typing import Any
 
 from bbui.backend.models import Group, Host, Inventory
+from bbui.backend.nodeset import fold_nodeset
 from bbui.backend.parser import dump_inventory, load_inventory_dir
 
 # ---------------------------------------------------------------------------
@@ -74,9 +75,15 @@ class Change:
 
 @dataclass
 class SourceMap:
-    """Maps each host and group name to the inventory file it was loaded from."""
-    hosts:  dict[str, Path] = field(default_factory=dict)
-    groups: dict[str, Path] = field(default_factory=dict)
+    """Maps each host and group name to ALL inventory files that mention it.
+
+    A host may appear in several files (e.g. declared in hosts.yml and also
+    listed in staging.ini).  On commit every one of those files must be
+    rewritten so that removals and renames propagate everywhere.
+    """
+    # host/group name -> set of files that contain it
+    hosts:  dict[str, set[Path]] = field(default_factory=dict)
+    groups: dict[str, set[Path]] = field(default_factory=dict)
     # The "default" file receives new hosts/groups with no known origin
     default_file: Path | None = None
 
@@ -182,9 +189,9 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
             continue
 
         for h in tmp.list_hosts():
-            smap.hosts[h.name] = filepath
+            smap.hosts.setdefault(h.name, set()).add(filepath)
         for g in tmp.list_groups():
-            smap.groups[g.name] = filepath
+            smap.groups.setdefault(g.name, set()).add(filepath)
 
     # Default write target: first YAML file, or a new inventory.yml
     yaml_files_root = [
@@ -225,14 +232,16 @@ def stage(
         source_map = _build_source_map(inventory_dir)
         all_changes = changes
 
-    # Annotate each new change with its target file
+    # Annotate each new change with its primary target file (first alphabetically).
+    # commit() will propagate to ALL files that contain the subject.
     for change in changes:
         if change.target_file is None:
-            change.target_file = (
+            files = (
                 source_map.hosts.get(change.subject)
                 or source_map.groups.get(change.subject)
-                or source_map.default_file
+                or set()
             )
+            change.target_file = min(files) if files else source_map.default_file
 
     staging = StagingArea(
         inventory=copy.deepcopy(inventory),
@@ -245,43 +254,106 @@ def stage(
 def commit(inventory_dir: Path) -> dict[Path, int]:
     """Write pending changes to disk and clear the cache.
 
-    Returns a mapping  {file_path: nb_of_changes_written}.
-    """
-    staging = load_cache(inventory_dir)
-    inv     = staging.inventory
-    smap    = staging.source_map
+    Strategy
+    --------
+    For each inventory file, we reload it in isolation, apply only the
+    changes that are relevant to it (additions of hosts/groups that
+    originate from it, removals of hosts/groups that appeared in it),
+    then write it back.  This guarantees that:
 
-    # Collect the set of files that need to be rewritten
+    * A host removed from the global inventory is removed from **every**
+      file that referenced it, not just its primary origin file.
+    * Hosts/groups that live in other files are left untouched.
+
+    Returns a mapping  {file_path: nb_of_changes_applied}.
+    """
+    from bbui.backend.parser import (
+        YAML_SUFFIXES, INI_SUFFIXES, GROUP_VARS_DIR,
+        _load_yaml_file, _load_ini_file, _detect_format,
+        dump_inventory,
+    )
+
+    staging = load_cache(inventory_dir)
+    inv     = staging.inventory   # final desired state
+    smap    = staging.source_map
+    changes = staging.changes
+
+    # Build the full set of files to touch:
+    #   - files that are the origin of any changed subject
+    #   - for REMOVED subjects: ALL files that mentioned them
     touched: set[Path] = set()
-    for change in staging.changes:
-        if change.target_file:
-            touched.add(change.target_file)
+    removed_hosts:  set[str] = {c.subject for c in changes if c.kind == ChangeKind.HOST_REMOVED}
+    removed_groups: set[str] = {c.subject for c in changes if c.kind == ChangeKind.GROUP_REMOVED}
+    added_hosts:    set[str] = {c.subject for c in changes if c.kind == ChangeKind.HOST_ADDED}
+    added_groups:   set[str] = {c.subject for c in changes if c.kind == ChangeKind.GROUP_ADDED}
+
+    for name in removed_hosts:
+        touched.update(smap.hosts.get(name, set()))
+    for name in removed_groups:
+        touched.update(smap.groups.get(name, set()))
+    for name in added_hosts:
+        files = smap.hosts.get(name, set())
+        touched.add(min(files) if files else smap.default_file)
+    for name in added_groups:
+        files = smap.groups.get(name, set())
+        touched.add(min(files) if files else smap.default_file)
+    # Catch any other change kinds (var sets, etc.)
+    for c in changes:
+        if c.target_file:
+            touched.add(c.target_file)
+
+    touched.discard(None)  # type: ignore[arg-type]
     if not touched and smap.default_file:
         touched.add(smap.default_file)
 
-    # For each touched file, rebuild an Inventory containing only the hosts/
-    # groups that originate from that file, then dump it.
     file_change_counts: dict[Path, int] = {}
 
     for target in sorted(touched):
-        # Build a per-file sub-inventory
-        sub = Inventory()
-        for g in inv.list_groups():
-            origin = smap.groups.get(g.name, smap.default_file)
-            if origin == target:
-                sub._ensure_group(g.name).vars = dict(g.vars)
-                sub._ensure_group(g.name).children = list(g.children)
-        for h in inv.list_hosts():
-            origin = smap.hosts.get(h.name, smap.default_file)
-            if origin == target:
-                for gname in h.groups:
-                    sub._ensure_group(gname).add_host(h.name)
-                sub._hosts[h.name] = copy.deepcopy(h)
+        # Re-parse this file in isolation to get its current on-disk state
+        file_inv = Inventory()
+        try:
+            fmt = _detect_format(target)
+            if fmt == "yaml":
+                _load_yaml_file(file_inv, target)
+            else:
+                _load_ini_file(file_inv, target)
+        except FileNotFoundError:
+            pass  # new file — start empty
+
+        nb = 0
+
+        # Apply removals: drop any host/group that was removed globally
+        for hostname in list(removed_hosts):
+            try:
+                file_inv.remove_host(hostname)
+                nb += 1
+            except KeyError:
+                pass  # not in this file, fine
+
+        for group_name in list(removed_groups):
+            try:
+                file_inv.remove_group(group_name)
+                nb += 1
+            except KeyError:
+                pass
+
+        # Apply additions: only add when this file is the primary origin
+        for hostname in added_hosts:
+            primary = min(smap.hosts.get(hostname, set()), default=smap.default_file)
+            if primary == target and hostname not in {h.name for h in file_inv.list_hosts()}:
+                host = inv.get_host(hostname)
+                file_inv.add_host(hostname, groups=host.groups, vars=host.vars)
+                nb += 1
+
+        for group_name in added_groups:
+            primary = min(smap.groups.get(group_name, set()), default=smap.default_file)
+            if primary == target and group_name not in {g.name for g in file_inv.list_groups()}:
+                grp = inv.get_group(group_name)
+                file_inv.add_group(group_name, vars=grp.vars)
+                nb += 1
 
         target.parent.mkdir(parents=True, exist_ok=True)
-        dump_inventory(sub, target)
-
-        nb = sum(1 for c in staging.changes if c.target_file == target)
+        dump_inventory(file_inv, target)
         file_change_counts[target] = nb
 
     discard(inventory_dir)
@@ -291,3 +363,94 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
 def diff_summary(staging: StagingArea) -> list[tuple[Change, Path | None]]:
     """Return a list of (change, target_file) pairs for display."""
     return [(c, c.target_file) for c in staging.changes]
+
+
+def grouped_changes(staging: StagingArea) -> list[tuple[ChangeKind, str, str, set[Path]]]:
+    """Fold changes with the same (kind, detail) into a single nodeset line.
+
+    Returns a list of tuples:
+        (kind, folded_nodeset_str, detail, set_of_target_files)
+
+    Changes on groups (GROUP_ADDED, GROUP_REMOVED) are not folded because
+    group names are not hostnames and ClusterShell should not process them.
+    Host changes with identical (kind, detail) are merged so that e.g. 10
+    individual HOST_ADDED changes appear as a single line ``web[01-10]``.
+    """
+    from collections import defaultdict
+
+    HOST_KINDS = {ChangeKind.HOST_ADDED, ChangeKind.HOST_REMOVED, ChangeKind.HOST_VAR_SET}
+
+    # key: (kind, detail) -> (subjects list, files set)
+    buckets: dict[tuple[ChangeKind, str], tuple[list[str], set[Path]]] = defaultdict(
+        lambda: ([], set())
+    )
+
+    for c in staging.changes:
+        subjects, files = buckets[(c.kind, c.detail)]
+        subjects.append(c.subject)
+        if c.target_file:
+            files.add(c.target_file)
+
+    result = []
+    for (kind, detail), (subjects, files) in buckets.items():
+        if kind in HOST_KINDS:
+            folded = fold_nodeset(subjects)
+        else:
+            # Groups: join with comma, no nodeset folding
+            folded = ", ".join(subjects)
+        result.append((kind, folded, detail, files))
+
+    return result
+
+
+def affected_files(staging: StagingArea) -> dict[Path, list[Change]]:
+    """Return the complete mapping {file -> [changes]} that commit() will touch.
+
+    Uses the same logic as commit() so that ``bbcli pending`` shows exactly
+    the files that will be rewritten — including every file that contains a
+    removed host/group, not just its primary origin file.
+    """
+    smap    = staging.source_map
+    changes = staging.changes
+
+    removed_hosts:  set[str] = {c.subject for c in changes if c.kind == ChangeKind.HOST_REMOVED}
+    removed_groups: set[str] = {c.subject for c in changes if c.kind == ChangeKind.GROUP_REMOVED}
+    added_hosts:    set[str] = {c.subject for c in changes if c.kind == ChangeKind.HOST_ADDED}
+    added_groups:   set[str] = {c.subject for c in changes if c.kind == ChangeKind.GROUP_ADDED}
+
+    # file -> list of changes that touch it (insertion-ordered, deduped)
+    file_changes: dict[Path, list[Change]] = {}
+
+    def _add(filepath: Path | None, change: Change) -> None:
+        if filepath is None:
+            return
+        lst = file_changes.setdefault(filepath, [])
+        if change not in lst:
+            lst.append(change)
+
+    for c in changes:
+        subject = c.subject
+        if c.kind == ChangeKind.HOST_REMOVED:
+            for f in smap.hosts.get(subject, set()):
+                _add(f, c)
+        elif c.kind == ChangeKind.GROUP_REMOVED:
+            for f in smap.groups.get(subject, set()):
+                _add(f, c)
+        elif c.kind == ChangeKind.HOST_ADDED:
+            files = smap.hosts.get(subject, set())
+            _add(min(files) if files else smap.default_file, c)
+        elif c.kind == ChangeKind.GROUP_ADDED:
+            files = smap.groups.get(subject, set())
+            _add(min(files) if files else smap.default_file, c)
+        else:
+            _add(c.target_file or smap.default_file, c)
+
+    if not file_changes and smap.default_file:
+        file_changes[smap.default_file] = set()
+
+    # Return sorted by path, changes already in staged order
+    staged_order = {id(c): i for i, c in enumerate(changes)}
+    return {
+        k: sorted(v, key=lambda c: staged_order.get(id(c), 0))
+        for k, v in sorted(file_changes.items())
+    }

@@ -8,6 +8,7 @@ packages = [{include = "bbui"}]
 
 [tool.poetry.dependencies]
 python = "^3.14"
+clustershell = "^1.9"
 typer = {extras = ["all"], version = "^0.15.0"}
 pyyaml = "^6.0"
 rich = "^13.0"

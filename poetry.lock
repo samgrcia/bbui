@@ -16,6 +16,20 @@ files = [
 colorama = {version = "*", markers = "platform_system == \"Windows\""}
 
 [[package]]
+name = "clustershell"
+version = "1.9.3"
+description = "ClusterShell library and tools"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "ClusterShell-1.9.3.tar.gz", hash = "sha256:e284c0e6b3fe0a0cd6be67df71dfbf6aa321188973db683a057f5637552fbc8c"},
+]
+
+[package.dependencies]
+PyYAML = "*"
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -655,4 +669,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.14"
-content-hash = "c30933770dacfaf02a8c18372a4a163671fc142044e52dabc5407d5840e2eec1"
+content-hash = "2d1cfcdd53760783cadee79051f93bb0f61c7f3ba3d885f5fd4e8778ce5a138c"

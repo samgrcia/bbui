@@ -12,10 +12,11 @@ from rich.table import Table
 from rich.text import Text
 
 from bbui.backend.models import Inventory
+from bbui.backend.nodeset import expand_nodeset, fold_nodeset
 from bbui.backend.parser import load_inventory, load_inventory_dir
 from bbui.backend.staging import (
     Change, ChangeKind,
-    commit, discard, diff_summary,
+    affected_files, commit, discard, diff_summary, grouped_changes,
     has_pending, load_cache, load_inventory_or_cache,
     stage,
 )
@@ -122,32 +123,48 @@ def cmd_pending(
         return
 
     staging = load_cache(inv_dir)
-    pairs   = diff_summary(staging)
+    by_file = affected_files(staging)
+    grouped = grouped_changes(staging)
 
-    table = Table(title="Pending changes", show_lines=True, show_header=True)
-    table.add_column("",        width=3,  no_wrap=True)
-    table.add_column("Type",    style="dim",    no_wrap=True)
-    table.add_column("Subject", style="cyan",   no_wrap=True)
-    table.add_column("Detail",  style="white")
-    table.add_column("Target file", style="magenta")
+    # ── Changes table: one row per (kind, detail) group, subject as nodeset ─
+    change_table = Table(title="Pending changes", show_lines=True)
+    change_table.add_column("",        width=3,  no_wrap=True)
+    change_table.add_column("Type",    style="dim",    no_wrap=True)
+    change_table.add_column("Nodeset / Subject", style="cyan")
+    change_table.add_column("Detail",  style="white")
 
-    files_touched: set[Path] = set()
-    for change, target in pairs:
-        icon, label = _KIND_LABEL.get(change.kind, ("?", str(change.kind)))
-        table.add_row(
-            icon,
-            label,
-            change.subject,
-            change.detail,
-            str(target) if target else "[dim]auto[/dim]",
-        )
-        if target:
-            files_touched.add(target)
+    for kind, folded, detail, _files in grouped:
+        icon, label = _KIND_LABEL.get(kind, ("?", str(kind)))
+        change_table.add_row(icon, label, folded, detail)
 
-    rprint(table)
-    if files_touched:
-        rprint(f"\n[bold]Files to be written:[/bold] {', '.join(str(f) for f in sorted(files_touched))}")
-    rprint(f"\n[dim]Cache:[/dim] {inv_dir / '.bbui' / 'cache.pkl'}")
+    rprint(change_table)
+
+    # ── Files table: one row per file, subjects folded as nodesets ──────────
+    files_table = Table(title="Files to be written", show_lines=True)
+    files_table.add_column("File",    style="magenta", no_wrap=True)
+    files_table.add_column("Changes", style="cyan")
+
+    from bbui.backend.nodeset import fold_nodeset
+    from bbui.backend.staging import ChangeKind as CK
+
+    HOST_KINDS = {CK.HOST_ADDED, CK.HOST_REMOVED, CK.HOST_VAR_SET}
+
+    for filepath, changes_for_file in by_file.items():
+        # Group by kind within this file, fold subjects per kind
+        per_kind: dict[ChangeKind, list[str]] = {}
+        for c in changes_for_file:
+            per_kind.setdefault(c.kind, []).append(c.subject)
+
+        parts = []
+        for kind, subjects in per_kind.items():
+            icon, _ = _KIND_LABEL.get(kind, ("?", ""))
+            folded = fold_nodeset(subjects) if kind in HOST_KINDS else ", ".join(subjects)
+            parts.append(f"{icon} {folded}")
+
+        files_table.add_row(str(filepath), "  ".join(parts))
+
+    rprint(files_table)
+    rprint(f"[dim]Cache:[/dim] {inv_dir / '.bbui' / 'cache.pkl'}")
 
 
 @app.command("commit")
@@ -197,37 +214,65 @@ def cmd_discard(
 
 @host_app.command("add")
 def host_add(
-    hostname: Annotated[str, typer.Argument(help="Hostname to add.")],
-    group: Annotated[
-        Optional[list[str]],
-        typer.Option("--group", "-g", help="Group(s) to assign the host to."),
+    nodeset: Annotated[str, typer.Argument(
+        help="Hostname or Nodeset to add (e.g. web01 or web[01:10])."
+    )],
+    groups: Annotated[
+        Optional[str],
+        typer.Option("--groups", "-g",
+                     help="Comma-separated list of groups to assign the hosts to "
+                          "(e.g. --groups webservers,staging)."),
     ] = None,
     inventory: InventoryOption = DEFAULT_INVENTORY,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
-    """Stage the addition of a host."""
-    inv = _load(inventory, inventory_dir)
+    """Stage the addition of one or more hosts (Nodeset syntax supported)."""
+    # Resolve groups
+    group_list: list[str] = [g.strip() for g in groups.split(",")] if groups else []
 
+    # Expand nodeset -> list of hostnames
     try:
-        host = inv.add_host(hostname, groups=list(group or []))
+        hostnames = expand_nodeset(nodeset)
     except ValueError as exc:
-        rprint(f"[red]Error:[/red] {exc}")
+        rprint(f"[red]Invalid nodeset:[/red] {exc}")
         raise typer.Exit(1)
 
-    change = Change(
-        kind=ChangeKind.HOST_ADDED,
-        subject=hostname,
-        detail=f"groups={host.groups}" if host.groups else "",
-    )
+    inv = _load(inventory, inventory_dir)
+    changes: list[Change] = []
+    added: list[str] = []
+    skipped: list[str] = []
+
+    for hostname in hostnames:
+        try:
+            host = inv.add_host(hostname, groups=group_list)
+            changes.append(Change(
+                kind=ChangeKind.HOST_ADDED,
+                subject=hostname,
+                detail=f"groups={group_list}" if group_list else "",
+            ))
+            added.append(hostname)
+        except ValueError:
+            skipped.append(hostname)
+
+    if skipped:
+        rprint(f"[yellow]Skipped (already exist):[/yellow] {', '.join(skipped)}")
+    if not added:
+        raise typer.Exit(0)
 
     if inventory_dir is not None:
         existing = load_cache(inventory_dir) if has_pending(inventory_dir) else None
-        stage(inv, [change], inventory_dir, existing)
-        rprint(f"[green]Staged:[/green] host '{hostname}' added  [dim](bbcli commit to write)[/dim]")
+        stage(inv, changes, inventory_dir, existing)
+        rprint(
+            f"[green]Staged:[/green] {len(added)} host(s) added"
+            + (f" → groups {group_list}" if group_list else "")
+            + "  [dim](bbcli commit to write)[/dim]"
+        )
+        for h in added:
+            rprint(f"  [dim]+[/dim] {h}")
     else:
         from bbui.backend.parser import dump_inventory
         dump_inventory(inv, inventory)
-        rprint(f"[green]Host added:[/green] {host}")
+        rprint(f"[green]{len(added)} host(s) added:[/green] {', '.join(added)}")
 
 
 @host_app.command("remove")
@@ -379,7 +424,9 @@ def group_list(
     table.add_column("Children", style="green")
 
     for group in sorted(groups, key=lambda g: g.name):
-        table.add_row(group.name, ", ".join(group.hosts), ", ".join(group.children))
+        hosts_str    = fold_nodeset(group.hosts) if group.hosts else ""
+        children_str = ", ".join(sorted(group.children))
+        table.add_row(group.name, hosts_str, children_str)
 
     rprint(table)
 
