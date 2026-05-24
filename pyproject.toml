@@ -2,7 +2,7 @@
 name = "bbui"
 version = "0.1.0"
 description = "Ansible inventory manager with CLI interface"
-authors = ["You <you@example.com>"]
+authors = ["samgrcia"]
 readme = "README.md"
 packages = [{include = "bbui"}]
 
