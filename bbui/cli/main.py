@@ -12,6 +12,7 @@ from rich.table import Table
 from rich.text import Text
 
 from bbui.backend.models import Inventory
+from bbui.backend.vars_lookup import build_var_source_map, lookup_var, _resolve_dotpath
 from bbui.cli.vars_display import vars_table
 from bbui.backend.nodeset import expand_nodeset, fold_nodeset
 from bbui.backend.parser import load_inventory, load_inventory_dir
@@ -28,11 +29,13 @@ app = typer.Typer(
     no_args_is_help=True,
 )
 
-host_app  = typer.Typer(help="Manage hosts.",  no_args_is_help=True)
-group_app = typer.Typer(help="Manage groups.", no_args_is_help=True)
+host_app  = typer.Typer(help="Manage hosts.",   no_args_is_help=True)
+group_app = typer.Typer(help="Manage groups.",  no_args_is_help=True)
+vars_app  = typer.Typer(help="Inspect variables.", no_args_is_help=True)
 
 app.add_typer(host_app,  name="host")
 app.add_typer(group_app, name="group")
+app.add_typer(vars_app,  name="vars")
 
 # ---------------------------------------------------------------------------
 # Shared options & helpers
@@ -332,25 +335,66 @@ def host_list(
 
 @host_app.command("show")
 def host_show(
-    hostname: Annotated[str, typer.Argument(help="Hostname to inspect.")],
+    nodeset: Annotated[str, typer.Argument(
+        help="Hostname or NodeSet to inspect (e.g. web01 or web[01:10])."
+    )],
+    varname: Annotated[Optional[str], typer.Argument(
+        help="Variable to display (dot-notation: bmc.ip4, disks[0].name). "
+             "Shows only that variable's value for each host in a compact table."
+    )] = None,
     inventory: InventoryOption = DEFAULT_INVENTORY,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
-    """Show details and all variables of a specific host."""
-    inv = _load(inventory, inventory_dir)
+    """Show details and variables of one or more hosts (NodeSet syntax supported).
+
+    With a second argument, restricts output to a single variable across all matched hosts.
+    """
     try:
-        host = inv.get_host(hostname)
-    except KeyError as exc:
-        rprint(f"[red]Error:[/red] {exc}")
+        hostnames = expand_nodeset(nodeset)
+    except ValueError as exc:
+        rprint(f"[red]Invalid nodeset:[/red] {exc}")
         raise typer.Exit(1)
 
-    rprint(f"[bold cyan]{host.name}[/bold cyan]")
-    rprint(f"  [dim]groups:[/dim] {', '.join(host.groups) if host.groups else 'none'}")
+    inv = _load(inventory, inventory_dir)
 
-    if host.vars:
-        rprint(vars_table(host.vars))
+    hosts = []
+    missing = []
+    for name in hostnames:
+        try:
+            hosts.append(inv.get_host(name))
+        except KeyError:
+            missing.append(name)
+
+    if missing:
+        rprint(f"[yellow]Not found:[/yellow] {', '.join(missing)}")
+    if not hosts:
+        raise typer.Exit(1)
+
+    if varname is not None:
+        # ── Single-variable mode: compact table Host | Value ─────────────
+        table = Table(
+            title=f"[bold yellow]{varname}[/bold yellow]",
+            show_lines=True,
+        )
+        table.add_column("Host",  style="cyan",  no_wrap=True)
+        table.add_column("Value", style="white")
+
+        for host in hosts:
+            found, value = _resolve_dotpath(host.vars, varname)
+            table.add_row(host.name, _format_value(value) if found else "[dim]—[/dim]")
+
+        rprint(table)
     else:
-        rprint("  [dim]vars:   none[/dim]")
+        # ── Full display mode: one block per host ─────────────────────────
+        for i, host in enumerate(hosts):
+            if i > 0:
+                rprint("")
+            rprint(f"[bold cyan]{host.name}[/bold cyan]")
+            rprint(f"  [dim]groups:[/dim] {', '.join(host.groups) if host.groups else 'none'}")
+            if host.vars:
+                rprint(vars_table(host.vars))
+            else:
+                rprint("  [dim]vars:   none[/dim]")
 
 
 # ===========================================================================
@@ -465,6 +509,72 @@ def group_list(
         table.add_row(group.name, hosts_str, children_str)
 
     rprint(table)
+
+
+# ===========================================================================
+# VARS commands
+# ===========================================================================
+
+@vars_app.command("show")
+def vars_show(
+    varname: Annotated[str, typer.Argument(
+        help="Variable name to look up. Supports dot-notation: network.ip, disks[0].name"
+    )],
+    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory_dir: InventoryDirOption = None,
+    hosts_only:  Annotated[bool, typer.Option("--hosts",  "-H", help="Show only host matches.")] = False,
+    groups_only: Annotated[bool, typer.Option("--groups", "-G", help="Show only group matches.")] = False,
+) -> None:
+    """Show every host and group that defines <varname>, with its value and source file."""
+    inv = _load(inventory, inventory_dir)
+
+    # Build a VarSourceMap to track which file contributed each variable key
+    var_source_map = None
+    if inventory_dir is not None:
+        try:
+            var_source_map = build_var_source_map(inventory_dir)
+        except Exception:
+            pass
+
+    matches = lookup_var(varname, inv, var_source_map)
+
+    if hosts_only:
+        matches = [m for m in matches if m.owner_kind == "host"]
+    if groups_only:
+        matches = [m for m in matches if m.owner_kind == "group"]
+
+    if not matches:
+        rprint(f"[dim]No match found for variable [bold]{varname}[/bold].[/dim]")
+        raise typer.Exit(0)
+
+    if inventory_dir and has_pending(inventory_dir):
+        rprint("[yellow]⚠ Showing staged inventory (uncommitted changes present)[/yellow]")
+
+    table = Table(
+        title=f"Variable: [bold yellow]{varname}[/bold yellow]",
+        show_lines=True,
+    )
+    table.add_column("Kind",   style="dim",     width=6,  no_wrap=True)
+    table.add_column("Owner",  style="cyan",              no_wrap=True)
+    table.add_column("Value",  style="white")
+    table.add_column("Source file", style="magenta")
+
+    for m in matches:
+        kind_str  = "host" if m.owner_kind == "host" else "group"
+        value_str = _format_value(m.value)
+        file_str  = str(m.source_file) if m.source_file else "[dim]unknown[/dim]"
+        table.add_row(kind_str, m.owner_name, value_str, file_str)
+
+    rprint(table)
+
+
+def _format_value(value: object) -> str:
+    """Format a variable value for display in the vars show table."""
+    if isinstance(value, dict):
+        return "\n".join(f"{k}: {v}" for k, v in value.items())
+    if isinstance(value, list):
+        return "\n".join(f"[{i}] {item}" for i, item in enumerate(value))
+    return str(value) if value is not None else ""
 
 
 if __name__ == "__main__":
