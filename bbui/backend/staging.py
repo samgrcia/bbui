@@ -1,30 +1,33 @@
 """Staging layer: pending changes, pickle cache and commit to disk.
 
+Two independent caches live under ``<inventory_dir>/.bbui/``:
+
+inventory_cache.pkl  (read cache)
+    Stores the fully-parsed Inventory together with a fingerprint
+    (the maximum mtime of all source files).  Every read command checks
+    whether the fingerprint is still valid before returning the cached
+    object; if any source file is newer the cache is silently rebuilt.
+    This avoids re-parsing all YAML/INI files on every CLI invocation.
+
+cache.pkl  (staging cache)
+    Stores a StagingArea (Inventory + Changes + SourceMap) for mutations
+    that have not yet been committed.  When this file is present it takes
+    absolute priority over the read cache: all commands see the staged
+    state.  Cleared by ``bbcli commit`` and ``bbcli discard``.
+
 Workflow
 --------
-1. Any mutating CLI command calls ``stage(inv, inventory_dir)`` instead of
-   writing directly to disk.  This serialises the modified ``Inventory`` into
-   ``<inventory_dir>/.bbui/cache.pkl`` together with a list of
-   ``Change`` records describing what was modified.
+1. Any mutating command calls ``stage()``, which writes ``cache.pkl`` and
+   invalidates ``inventory_cache.pkl`` (so the next read rebuilds it from
+   the staged inventory, not from disk).
 
-2. ``bbcli pending`` calls ``show_pending(inventory_dir)`` to display the
-   staged changes and the files that *would* be written on commit.
+2. ``bbcli pending`` shows staged changes grouped as NodeSets.
 
-3. ``bbcli commit`` calls ``commit(inventory_dir)`` which:
-   a. Writes each modified group's hosts back to the originating inventory
-      file (tracked in ``SourceMap``).
-   b. Deletes the cache file.
+3. ``bbcli commit`` writes touched files to disk, deletes ``cache.pkl``,
+   then rebuilds ``inventory_cache.pkl`` from the freshly written files.
 
-4. ``bbcli discard`` calls ``discard(inventory_dir)`` to delete the cache
-   without writing anything.
-
-Cache layout
-------------
-``<inventory_dir>/.bbui/cache.pkl`` contains a ``StagingArea`` dataclass
-(pickled) with:
-  - ``inventory``  : the full modified Inventory object
-  - ``changes``    : ordered list of Change records
-  - ``source_map`` : mapping  host/group → originating file path
+4. ``bbcli discard`` deletes ``cache.pkl`` and invalidates
+   ``inventory_cache.pkl`` so the next read reloads from disk.
 """
 
 from __future__ import annotations
@@ -44,8 +47,9 @@ from bbui.backend.parser import dump_inventory, load_inventory_dir
 # Constants
 # ---------------------------------------------------------------------------
 
-BBUI_DIR   = ".bbui"
-CACHE_FILE = "cache.pkl"
+BBUI_DIR        = ".bbui"
+CACHE_FILE      = "cache.pkl"
+INV_CACHE_FILE  = "inventory_cache.pkl"
 
 
 # ---------------------------------------------------------------------------
@@ -129,10 +133,15 @@ def _write_cache(staging: StagingArea, inventory_dir: Path) -> None:
 
 
 def discard(inventory_dir: Path) -> None:
-    """Delete the staging cache without writing any changes."""
+    """Delete the staging cache without writing any changes.
+
+    Also invalidates the read cache so the next command reloads from disk,
+    ensuring the view is consistent with the on-disk state.
+    """
     path = _cache_path(inventory_dir)
     if path.exists():
         path.unlink()
+    _invalidate_inv_cache(inventory_dir)
     # Remove .bbui dir if now empty
     bbui_dir = inventory_dir / BBUI_DIR
     if bbui_dir.exists() and not any(bbui_dir.iterdir()):
@@ -204,14 +213,97 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
 
 
 # ---------------------------------------------------------------------------
+# Read cache (inventory_cache.pkl)
+# ---------------------------------------------------------------------------
+
+@dataclass
+class InvCache:
+    """Pickled read cache: parsed inventory + source fingerprint."""
+    inventory:   Inventory
+    fingerprint: float          # max mtime of all source files at build time
+
+
+def _inv_cache_path(inventory_dir: Path) -> Path:
+    return inventory_dir / BBUI_DIR / INV_CACHE_FILE
+
+
+def _source_fingerprint(inventory_dir: Path) -> float:
+    """Return the maximum mtime across all inventory source files."""
+    from bbui.backend.parser import YAML_SUFFIXES, INI_SUFFIXES, GROUP_VARS_DIR
+    max_mtime = 0.0
+    for filepath in inventory_dir.rglob("*"):
+        if not filepath.is_file():
+            continue
+        suffix = filepath.suffix.lower()
+        if suffix in YAML_SUFFIXES or suffix in INI_SUFFIXES or (
+            suffix == "" and GROUP_VARS_DIR not in filepath.parts
+        ):
+            mtime = filepath.stat().st_mtime
+            if mtime > max_mtime:
+                max_mtime = mtime
+    return max_mtime
+
+
+def _load_inv_cache(inventory_dir: Path) -> Inventory | None:
+    """Return the cached Inventory if it is still valid, else None."""
+    cache_path = _inv_cache_path(inventory_dir)
+    if not cache_path.exists():
+        return None
+    try:
+        with cache_path.open("rb") as fh:
+            inv_cache: InvCache = pickle.load(fh)  # noqa: S301
+    except Exception:
+        return None
+    # Validate fingerprint
+    if _source_fingerprint(inventory_dir) > inv_cache.fingerprint:
+        return None
+    return inv_cache.inventory
+
+
+def _save_inv_cache(inventory: Inventory, inventory_dir: Path) -> None:
+    """Persist *inventory* to the read cache with the current fingerprint."""
+    cache_path = _inv_cache_path(inventory_dir)
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    inv_cache = InvCache(
+        inventory=copy.deepcopy(inventory),
+        fingerprint=_source_fingerprint(inventory_dir),
+    )
+    with cache_path.open("wb") as fh:
+        pickle.dump(inv_cache, fh)
+
+
+def _invalidate_inv_cache(inventory_dir: Path) -> None:
+    """Delete the read cache so the next read rebuilds it."""
+    p = _inv_cache_path(inventory_dir)
+    if p.exists():
+        p.unlink()
+
+
+# ---------------------------------------------------------------------------
 # Public API
 # ---------------------------------------------------------------------------
 
 def load_inventory_or_cache(inventory_dir: Path) -> Inventory:
-    """Return the staged inventory if a cache exists, otherwise load from disk."""
+    """Return the active inventory for *inventory_dir*, using caches when valid.
+
+    Priority:
+    1. Staging cache (``cache.pkl``) — present when there are uncommitted changes.
+    2. Read cache (``inventory_cache.pkl``) — valid when no source file is newer.
+    3. Full parse via ``load_inventory_dir()`` — rebuilds the read cache.
+    """
+    # 1. Staging cache takes absolute priority
     if has_pending(inventory_dir):
         return load_cache(inventory_dir).inventory
-    return load_inventory_dir(inventory_dir)
+
+    # 2. Read cache (fingerprint-validated)
+    cached = _load_inv_cache(inventory_dir)
+    if cached is not None:
+        return cached
+
+    # 3. Full parse + persist read cache
+    inventory = load_inventory_dir(inventory_dir)
+    _save_inv_cache(inventory, inventory_dir)
+    return inventory
 
 
 def stage(
@@ -249,6 +341,8 @@ def stage(
         source_map=source_map,
     )
     _write_cache(staging, inventory_dir)
+    # Invalidate the read cache: subsequent reads will see the staged state
+    _invalidate_inv_cache(inventory_dir)
 
 
 def commit(inventory_dir: Path) -> dict[Path, int]:
@@ -357,6 +451,11 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
         file_change_counts[target] = nb
 
     discard(inventory_dir)
+
+    # Rebuild the read cache from the freshly written files
+    fresh = load_inventory_dir(inventory_dir)
+    _save_inv_cache(fresh, inventory_dir)
+
     return file_change_counts
 
 

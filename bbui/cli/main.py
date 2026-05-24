@@ -12,6 +12,7 @@ from rich.table import Table
 from rich.text import Text
 
 from bbui.backend.models import Inventory
+from bbui.cli.vars_display import vars_table
 from bbui.backend.nodeset import expand_nodeset, fold_nodeset
 from bbui.backend.parser import load_inventory, load_inventory_dir
 from bbui.backend.staging import (
@@ -335,13 +336,21 @@ def host_show(
     inventory: InventoryOption = DEFAULT_INVENTORY,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
-    """Show details of a specific host."""
+    """Show details and all variables of a specific host."""
     inv = _load(inventory, inventory_dir)
     try:
-        rprint(inv.get_host(hostname))
+        host = inv.get_host(hostname)
     except KeyError as exc:
         rprint(f"[red]Error:[/red] {exc}")
         raise typer.Exit(1)
+
+    rprint(f"[bold cyan]{host.name}[/bold cyan]")
+    rprint(f"  [dim]groups:[/dim] {', '.join(host.groups) if host.groups else 'none'}")
+
+    if host.vars:
+        rprint(vars_table(host.vars))
+    else:
+        rprint("  [dim]vars:   none[/dim]")
 
 
 # ===========================================================================
@@ -400,6 +409,33 @@ def group_remove(
         from bbui.backend.parser import dump_inventory
         dump_inventory(inv, inventory)
         rprint(f"[yellow]Group removed:[/yellow] {group_name}")
+
+
+@group_app.command("show")
+def group_show(
+    group_name: Annotated[str, typer.Argument(help="Group name to inspect.")],
+    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """Show details and all variables of a specific group."""
+    inv = _load(inventory, inventory_dir)
+    try:
+        group = inv.get_group(group_name)
+    except KeyError as exc:
+        rprint(f"[red]Error:[/red] {exc}")
+        raise typer.Exit(1)
+
+    rprint(f"[bold cyan]{group.name}[/bold cyan]")
+
+    hosts_str    = fold_nodeset(group.hosts) if group.hosts else "[dim]none[/dim]"
+    children_str = ", ".join(sorted(group.children)) if group.children else "[dim]none[/dim]"
+    rprint(f"  [dim]hosts:[/dim]    {hosts_str}")
+    rprint(f"  [dim]children:[/dim] {children_str}")
+
+    if group.vars:
+        rprint(vars_table(group.vars))
+    else:
+        rprint("  [dim]vars:   none[/dim]")
 
 
 @group_app.command("list")
