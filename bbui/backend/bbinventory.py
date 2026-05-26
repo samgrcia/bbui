@@ -44,6 +44,7 @@ from typing import Any
 import yaml
 
 from bbui.backend.models import Group, Host, Inventory
+from bbui.backend.nodeset import fold_ansible
 from bbui.backend.parser import _expand_hostpattern, _load_group_vars  # type: ignore[attr-defined]
 
 # ---------------------------------------------------------------------------
@@ -267,8 +268,8 @@ class BbInventory(Inventory):
             for group in sorted(groups, key=lambda g: g.name):
                 # [group]
                 lines.append(f"[{group.name}]")
-                for hostname in sorted(group.hosts):
-                    lines.append(hostname)
+                for pattern in fold_ansible(group.hosts):
+                    lines.append(pattern)
                 lines.append("")
                 # [group:vars]
                 if group.vars:
