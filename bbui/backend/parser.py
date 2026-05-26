@@ -27,6 +27,8 @@ from typing import Any
 
 import yaml
 
+from ClusterShell.NodeSet import NodeSet as _NodeSet
+
 from bbui.backend.models import Inventory
 
 # ---------------------------------------------------------------------------
@@ -40,8 +42,9 @@ GROUP_VARS_DIR = "group_vars"
 # Ansible INI: optional inline vars  web01 ansible_user=ubuntu ansible_port=22
 _INI_HOST_RE = re.compile(r"^(?P<host>\S+)(?P<vars>(\s+\S+=\S+)*)$")
 
-# Ansible range pattern: web[01:03], g[a:c], srv[1:3].dc
-_RANGE_RE = re.compile(r"^(?P<prefix>[^[]*)\[(?P<start>[0-9a-z]+):(?P<end>[0-9a-z]+)\](?P<suffix>[^[]*)$")
+# Ansible range pattern: web[01:03], g[a:c], srv[1:3].dc, hmcr[11:12]s[0:1]
+# suffix is .* to allow additional ranges after the first bracket pair
+_RANGE_RE = re.compile(r"^(?P<prefix>[^[]*)\[(?P<start>[0-9a-z]+):(?P<end>[0-9a-z]+)\](?P<suffix>.*)$")
 
 
 # ===========================================================================
@@ -52,15 +55,28 @@ def _expand_hostpattern(pattern: str) -> list[str]:
     """Expand an Ansible host pattern into a list of hostnames.
 
     Supports numeric and alphabetic ranges with optional zero-padding.
+    Multiple ranges in one pattern are expanded recursively (Cartesian product).
     Examples:
-        web[1:3]    -> web1, web2, web3
-        web[01:03]  -> web01, web02, web03
-        g[a:c]      -> ga, gb, gc
-        srv[1:2].dc -> srv1.dc, srv2.dc
-        web01       -> web01  (no range, returned as-is)
+        web[1:3]          -> web1, web2, web3
+        web[01:03]        -> web01, web02, web03
+        g[a:c]            -> ga, gb, gc
+        srv[1:2].dc       -> srv1.dc, srv2.dc
+        hmcr[11:12]s[0:1] -> hmcr11s0, hmcr11s1, hmcr12s0, hmcr12s1
+        web01             -> web01  (no range, returned as-is)
     """
     m = _RANGE_RE.match(pattern)
     if not m:
+        # Pattern doesn't match a simple colon range — might be a ClusterShell
+        # union or step expression like mgt[1,3]. Fall back to ClusterShell,
+        # converting any Ansible colon ranges to dash first.
+        if "[" in pattern:
+            cs_pattern = re.sub(r"\[([0-9a-z]+):([0-9a-z]+)\]", r"[\1-\2]", pattern)
+            try:
+                expanded = sorted(_NodeSet(cs_pattern))
+                if expanded != [pattern]:
+                    return expanded
+            except Exception:
+                pass
         return [pattern]
 
     prefix = m.group("prefix")
@@ -74,21 +90,18 @@ def _expand_hostpattern(pattern: str) -> list[str]:
         i_start = int(start)
         i_end   = int(end)
         step    = 1 if i_start <= i_end else -1
-        return [
-            f"{prefix}{str(i).zfill(pad)}{suffix}"
-            for i in range(i_start, i_end + step, step)
-        ]
-
-    # Alphabetic range (single lowercase letters only)
-    if len(start) == 1 and len(end) == 1 and start.isalpha() and end.isalpha():
+        expanded = [f"{prefix}{str(i).zfill(pad)}{suffix}" for i in range(i_start, i_end + step, step)]
+    elif len(start) == 1 and len(end) == 1 and start.isalpha() and end.isalpha():
         step = 1 if start <= end else -1
-        return [
-            f"{prefix}{chr(c)}{suffix}"
-            for c in range(ord(start), ord(end) + step, step)
-        ]
+        expanded = [f"{prefix}{chr(c)}{suffix}" for c in range(ord(start), ord(end) + step, step)]
+    else:
+        return [pattern]
 
-    # Unrecognised range format — return as-is
-    return [pattern]
+    # Recursively expand any remaining ranges in the suffix
+    result: list[str] = []
+    for item in expanded:
+        result.extend(_expand_hostpattern(item))
+    return result
 
 
 
