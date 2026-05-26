@@ -463,20 +463,20 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
         except FileNotFoundError:
             pass  # new file — start empty
 
-        nb = 0
+        count = 0
 
         # Apply removals: drop any host/group that was removed globally
         for hostname in list(removed_hosts):
             try:
                 file_inv.remove_host(hostname)
-                nb += 1
+                count += 1
             except KeyError:
                 pass  # not in this file, fine
 
         for group_name in list(removed_groups):
             try:
                 file_inv.remove_group(group_name)
-                nb += 1
+                count += 1
             except KeyError:
                 pass
 
@@ -486,18 +486,18 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
             if primary == target and hostname not in {h.name for h in file_inv.list_hosts()}:
                 host = inv.get_host(hostname)
                 file_inv.add_host(hostname, groups=host.groups, vars=host.vars)
-                nb += 1
+                count += 1
 
         for group_name in added_groups:
             primary = min(smap.groups.get(group_name, set()), default=smap.default_file)
             if primary == target and group_name not in {g.name for g in file_inv.list_groups()}:
                 grp = inv.get_group(group_name)
                 file_inv.add_group(group_name, vars=grp.vars)
-                nb += 1
+                count += 1
 
         target.parent.mkdir(parents=True, exist_ok=True)
         dump_inventory(file_inv, target)
-        file_change_counts[target] = nb
+        file_change_counts[target] = count
 
     discard(inventory_dir)
 

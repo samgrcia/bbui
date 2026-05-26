@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, Optional
+from typing import Annotated, NoReturn, Optional
 
 import typer
 from rich import print as rprint
@@ -41,14 +41,16 @@ app.add_typer(vars_app,  name="vars")
 # Shared options & helpers
 # ---------------------------------------------------------------------------
 
+# Subdirectory name looked for during workdir auto-discovery
+INVENTORY_SUBDIR = "inventory"
+
 InventoryOption = Annotated[
-    Path,
+    Optional[Path],
     typer.Option(
         "--inventory", "-i",
         help="Path to an Ansible inventory file (YAML or INI). "
              "Used only when --inventory-dir is not set.",
         envvar="BBUI_INVENTORY",
-        show_default=True,
     ),
 ]
 
@@ -62,8 +64,6 @@ InventoryDirOption = Annotated[
     ),
 ]
 
-DEFAULT_INVENTORY = Path("inventory.yml")
-
 # ANSI-style labels for ChangeKind
 _KIND_LABEL: dict[ChangeKind, tuple[str, str]] = {
     ChangeKind.HOST_ADDED:    ("[green]+[/green]", "host added"),
@@ -75,7 +75,39 @@ _KIND_LABEL: dict[ChangeKind, tuple[str, str]] = {
 }
 
 
-def _load_clean(inventory: Path, inventory_dir: Optional[Path]) -> Inventory:
+def _resolve_inventory(
+    inventory: Path | None,
+    inventory_dir: Path | None,
+) -> tuple[Path | None, Path | None]:
+    """Return (inv_file, inv_dir) using CLI/env/workdir priority.
+
+    Priority:
+    1. --inventory-dir / BBUI_INVENTORY_DIR
+    2. --inventory / BBUI_INVENTORY
+    3. cwd/inventory/ workdir auto-discovery
+    Returns (None, None) when nothing is found.
+    """
+    if inventory_dir is not None:
+        return None, inventory_dir
+    if inventory is not None:
+        return inventory, None
+    candidate = Path.cwd() / INVENTORY_SUBDIR
+    if candidate.is_dir():
+        return None, candidate
+    return None, None
+
+
+def _no_inventory_error() -> NoReturn:
+    rprint(
+        "[red]No inventory found.[/red]  "
+        "Pass [bold]-i FILE[/bold] or [bold]-I DIR[/bold], "
+        "set [bold]BBUI_INVENTORY[/bold] / [bold]BBUI_INVENTORY_DIR[/bold], "
+        "or run from a workdir containing an [bold]inventory/[/bold] subdirectory."
+    )
+    raise typer.Exit(1)
+
+
+def _load_clean(inventory: Path | None, inventory_dir: Path | None) -> Inventory:
     """Load directly from disk (ignores cache). Used for read-only commands."""
     try:
         if inventory_dir is not None:
@@ -83,34 +115,37 @@ def _load_clean(inventory: Path, inventory_dir: Optional[Path]) -> Inventory:
             if BbInventory.is_bb_layout(inventory_dir):
                 return BbInventory.load(inventory_dir)
             return load_inventory_dir(inventory_dir)
-        return load_inventory(inventory)
+        if inventory is not None:
+            return load_inventory(inventory)
     except FileNotFoundError as exc:
         rprint(f"[red]Not found:[/red] {exc}")
         raise typer.Exit(1)
     except ValueError as exc:
         rprint(f"[red]Error:[/red] {exc}")
         raise typer.Exit(1)
+    raise AssertionError("unreachable")
 
 
-def _load(inventory: Path, inventory_dir: Optional[Path]) -> Inventory:
+def _load(inventory: Path | None, inventory_dir: Path | None) -> Inventory:
     """Load inventory — from staging cache if present, otherwise from disk."""
     try:
         if inventory_dir is not None:
             return load_inventory_or_cache(inventory_dir)
-        return load_inventory(inventory)
+        if inventory is not None:
+            return load_inventory(inventory)
     except FileNotFoundError as exc:
         rprint(f"[red]Not found:[/red] {exc}")
         raise typer.Exit(1)
     except ValueError as exc:
         rprint(f"[red]Error:[/red] {exc}")
         raise typer.Exit(1)
+    raise AssertionError("unreachable")
 
 
-def _require_dir(inventory_dir: Optional[Path]) -> Path:
-    """Exit with error when --inventory-dir is required but absent."""
+def _require_dir(inventory_dir: Path | None) -> Path:
+    """Exit with error when an inventory directory is required but not found."""
     if inventory_dir is None:
-        rprint("[red]This command requires --inventory-dir / BBUI_INVENTORY_DIR.[/red]")
-        raise typer.Exit(1)
+        _no_inventory_error()
     return inventory_dir
 
 
@@ -123,7 +158,8 @@ def cmd_pending(
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Show staged changes waiting to be committed."""
-    inv_dir = _require_dir(inventory_dir)
+    _, inv_dir = _resolve_inventory(None, inventory_dir)
+    inv_dir = _require_dir(inv_dir)
 
     if not has_pending(inv_dir):
         rprint("[dim]No pending changes.[/dim]")
@@ -157,7 +193,6 @@ def cmd_pending(
     HOST_KINDS = {CK.HOST_ADDED, CK.HOST_REMOVED, CK.HOST_VAR_SET}
 
     for filepath, changes_for_file in by_file.items():
-        # Group by kind within this file, fold subjects per kind
         per_kind: dict[ChangeKind, list[str]] = {}
         for c in changes_for_file:
             per_kind.setdefault(c.kind, []).append(c.subject)
@@ -179,7 +214,8 @@ def cmd_commit(
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Write pending changes to disk and clear the staging cache."""
-    inv_dir = _require_dir(inventory_dir)
+    _, inv_dir = _resolve_inventory(None, inventory_dir)
+    inv_dir = _require_dir(inv_dir)
 
     if not has_pending(inv_dir):
         rprint("[dim]Nothing to commit.[/dim]")
@@ -191,8 +227,8 @@ def cmd_commit(
         rprint(f"[red]Commit failed:[/red] {exc}")
         raise typer.Exit(1)
 
-    for filepath, nb in sorted(counts.items()):
-        rprint(f"[green]✓[/green] {filepath}  ([dim]{nb} change(s)[/dim])")
+    for filepath, count in sorted(counts.items()):
+        rprint(f"[green]✓[/green] {filepath}  ([dim]{count} change(s)[/dim])")
     rprint("[bold green]Commit complete.[/bold green]")
 
 
@@ -202,7 +238,8 @@ def cmd_discard(
     force: Annotated[bool, typer.Option("--force", "-f", help="Skip confirmation.")] = False,
 ) -> None:
     """Discard all pending changes without writing to disk."""
-    inv_dir = _require_dir(inventory_dir)
+    _, inv_dir = _resolve_inventory(None, inventory_dir)
+    inv_dir = _require_dir(inv_dir)
 
     if not has_pending(inv_dir):
         rprint("[dim]No pending changes to discard.[/dim]")
@@ -230,28 +267,30 @@ def host_add(
                      help="Comma-separated list of groups to assign the hosts to "
                           "(e.g. --groups webservers,staging)."),
     ] = None,
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Stage the addition of one or more hosts (Nodeset syntax supported)."""
-    # Resolve groups
     group_list: list[str] = [g.strip() for g in groups.split(",")] if groups else []
 
-    # Expand nodeset -> list of hostnames
     try:
         hostnames = expand_nodeset(nodeset)
     except ValueError as exc:
         rprint(f"[red]Invalid nodeset:[/red] {exc}")
         raise typer.Exit(1)
 
-    inv = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
     changes: list[Change] = []
     added: list[str] = []
     skipped: list[str] = []
 
     for hostname in hostnames:
         try:
-            host = inv.add_host(hostname, groups=group_list)
+            inv.add_host(hostname, groups=group_list)
             changes.append(Change(
                 kind=ChangeKind.HOST_ADDED,
                 subject=hostname,
@@ -263,7 +302,6 @@ def host_add(
             if "already exists" in msg:
                 skipped.append(hostname)
             else:
-                # Group validation error (e.g. missing fn_/hw_/os_ group)
                 rprint(f"[red]Error:[/red] {exc}")
                 raise typer.Exit(1)
 
@@ -272,9 +310,9 @@ def host_add(
     if not added:
         raise typer.Exit(0)
 
-    if inventory_dir is not None:
-        existing = load_cache(inventory_dir) if has_pending(inventory_dir) else None
-        stage(inv, changes, inventory_dir, existing)
+    if inv_dir is not None:
+        existing = load_cache(inv_dir) if has_pending(inv_dir) else None
+        stage(inv, changes, inv_dir, existing)
         rprint(
             f"[green]Staged:[/green] {len(added)} host(s) added"
             + (f" → groups {group_list}" if group_list else "")
@@ -284,18 +322,22 @@ def host_add(
             rprint(f"  [dim]+[/dim] {h}")
     else:
         from bbui.backend.parser import dump_inventory
-        dump_inventory(inv, inventory)
+        dump_inventory(inv, inv_file)  # type: ignore[arg-type]
         rprint(f"[green]{len(added)} host(s) added:[/green] {', '.join(added)}")
 
 
 @host_app.command("remove")
 def host_remove(
     hostname: Annotated[str, typer.Argument(help="Hostname to remove.")],
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Stage the removal of a host."""
-    inv = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
 
     try:
         inv.remove_host(hostname)
@@ -305,26 +347,30 @@ def host_remove(
 
     change = Change(kind=ChangeKind.HOST_REMOVED, subject=hostname)
 
-    if inventory_dir is not None:
-        existing = load_cache(inventory_dir) if has_pending(inventory_dir) else None
-        stage(inv, [change], inventory_dir, existing)
+    if inv_dir is not None:
+        existing = load_cache(inv_dir) if has_pending(inv_dir) else None
+        stage(inv, [change], inv_dir, existing)
         rprint(f"[yellow]Staged:[/yellow] host '{hostname}' removed  [dim](bbcli commit to write)[/dim]")
     else:
         from bbui.backend.parser import dump_inventory
-        dump_inventory(inv, inventory)
+        dump_inventory(inv, inv_file)  # type: ignore[arg-type]
         rprint(f"[yellow]Host removed:[/yellow] {hostname}")
 
 
 @host_app.command("list")
 def host_list(
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """List all hosts (includes staged changes if any)."""
-    inv   = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv   = _load(inv_file, inv_dir)
     hosts = inv.list_hosts()
 
-    if inventory_dir and has_pending(inventory_dir):
+    if inv_dir and has_pending(inv_dir):
         rprint("[yellow]⚠ Showing staged inventory (uncommitted changes present)[/yellow]")
 
     if not hosts:
@@ -351,7 +397,7 @@ def host_show(
         help="Variable to display (dot-notation: bmc.ip4, disks[0].name). "
              "Shows only that variable's value for each host in a compact table."
     )] = None,
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Show details and variables of one or more hosts (NodeSet syntax supported).
@@ -364,7 +410,11 @@ def host_show(
         rprint(f"[red]Invalid nodeset:[/red] {exc}")
         raise typer.Exit(1)
 
-    inv = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
 
     hosts = []
     missing = []
@@ -413,11 +463,15 @@ def host_show(
 @group_app.command("add")
 def group_add(
     group_name: Annotated[str, typer.Argument(help="Group name to add.")],
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Stage the addition of a group."""
-    inv = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
 
     try:
         inv.add_group(group_name)
@@ -427,24 +481,28 @@ def group_add(
 
     change = Change(kind=ChangeKind.GROUP_ADDED, subject=group_name)
 
-    if inventory_dir is not None:
-        existing = load_cache(inventory_dir) if has_pending(inventory_dir) else None
-        stage(inv, [change], inventory_dir, existing)
+    if inv_dir is not None:
+        existing = load_cache(inv_dir) if has_pending(inv_dir) else None
+        stage(inv, [change], inv_dir, existing)
         rprint(f"[green]Staged:[/green] group '{group_name}' added  [dim](bbcli commit to write)[/dim]")
     else:
         from bbui.backend.parser import dump_inventory
-        dump_inventory(inv, inventory)
+        dump_inventory(inv, inv_file)  # type: ignore[arg-type]
         rprint(f"[green]Group added:[/green] {group_name}")
 
 
 @group_app.command("remove")
 def group_remove(
     group_name: Annotated[str, typer.Argument(help="Group name to remove.")],
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Stage the removal of a group."""
-    inv = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
 
     try:
         inv.remove_group(group_name)
@@ -454,24 +512,28 @@ def group_remove(
 
     change = Change(kind=ChangeKind.GROUP_REMOVED, subject=group_name)
 
-    if inventory_dir is not None:
-        existing = load_cache(inventory_dir) if has_pending(inventory_dir) else None
-        stage(inv, [change], inventory_dir, existing)
+    if inv_dir is not None:
+        existing = load_cache(inv_dir) if has_pending(inv_dir) else None
+        stage(inv, [change], inv_dir, existing)
         rprint(f"[yellow]Staged:[/yellow] group '{group_name}' removed  [dim](bbcli commit to write)[/dim]")
     else:
         from bbui.backend.parser import dump_inventory
-        dump_inventory(inv, inventory)
+        dump_inventory(inv, inv_file)  # type: ignore[arg-type]
         rprint(f"[yellow]Group removed:[/yellow] {group_name}")
 
 
 @group_app.command("show")
 def group_show(
     group_name: Annotated[str, typer.Argument(help="Group name to inspect.")],
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Show details and all variables of a specific group."""
-    inv = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
     try:
         group = inv.get_group(group_name)
     except KeyError as exc:
@@ -493,14 +555,18 @@ def group_show(
 
 @group_app.command("list")
 def group_list(
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """List all groups (includes staged changes if any)."""
-    inv    = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv    = _load(inv_file, inv_dir)
     groups = inv.list_groups()
 
-    if inventory_dir and has_pending(inventory_dir):
+    if inv_dir and has_pending(inv_dir):
         rprint("[yellow]⚠ Showing staged inventory (uncommitted changes present)[/yellow]")
 
     if not groups:
@@ -529,19 +595,23 @@ def vars_show(
     varname: Annotated[str, typer.Argument(
         help="Variable name to look up. Supports dot-notation: network.ip, disks[0].name"
     )],
-    inventory: InventoryOption = DEFAULT_INVENTORY,
+    inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
     hosts_only:  Annotated[bool, typer.Option("--hosts",  "-H", help="Show only host matches.")] = False,
     groups_only: Annotated[bool, typer.Option("--groups", "-G", help="Show only group matches.")] = False,
 ) -> None:
     """Show every host and group that defines <varname>, with its value and source file."""
-    inv = _load(inventory, inventory_dir)
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
 
     # Build a VarSourceMap to track which file contributed each variable key
     var_source_map = None
-    if inventory_dir is not None:
+    if inv_dir is not None:
         try:
-            var_source_map = build_var_source_map(inventory_dir)
+            var_source_map = build_var_source_map(inv_dir)
         except Exception:
             pass
 
@@ -556,7 +626,7 @@ def vars_show(
         rprint(f"[dim]No match found for variable [bold]{varname}[/bold].[/dim]")
         raise typer.Exit(0)
 
-    if inventory_dir and has_pending(inventory_dir):
+    if inv_dir and has_pending(inv_dir):
         rprint("[yellow]⚠ Showing staged inventory (uncommitted changes present)[/yellow]")
 
     table = Table(
