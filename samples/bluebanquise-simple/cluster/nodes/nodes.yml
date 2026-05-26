@@ -1,0 +1,82 @@
+all:
+  hosts:
+    c001:
+      bmc:
+        ip4: 10.10.103.1
+        mac: 2a:2b:3c:2d:30:31
+        name: bc001
+        network: net-admin
+      network_interfaces:
+      - interface: enp1s0
+        ip4: 10.10.3.1
+        mac: 1a:2b:3c:4d:31:31
+        network: net-admin
+    c002:
+      bmc:
+        ip4: 10.10.103.2
+        mac: 2a:2b:3c:2d:30:32
+        name: bc002
+        network: net-admin
+      network_interfaces:
+      - interface: enp1s0
+        ip4: 10.10.3.2
+        mac: 1a:2b:3c:4d:31:32
+        network: net-admin
+    c003:
+      bmc:
+        ip4: 10.10.103.3
+        mac: 2a:2b:3c:2d:30:33
+        name: bc003
+        network: net-admin
+      network_interfaces:
+      - interface: enp1s0
+        ip4: 10.10.3.3
+        mac: 1a:2b:3c:4d:31:33
+        network: net-admin
+    c004:
+      bmc:
+        ip4: 10.10.103.4
+        mac: 2a:2b:3c:2d:30:34
+        name: bc004
+        network: net-admin
+      network_interfaces:
+      - interface: enp1s0
+        ip4: 10.10.3.4
+        mac: 1a:2b:3c:4d:31:34
+        network: net-admin
+    g001:
+      bmc:
+        ip4: 10.10.103.21
+        mac: 2a:2b:3c:2d:30:41
+        name: bg001
+        network: net-admin
+      mavariable: toto
+      network_interfaces:
+      - interface: enp1s0
+        ip4: 10.10.3.21
+        mac: 1a:2b:3c:4d:31:41
+        network: net-admin
+    g002:
+      bmc:
+        ip4: 10.10.103.22
+        mac: 2a:2b:3c:2d:30:42
+        name: bg002
+        network: net-admin
+      mavariable: toto
+      network_interfaces:
+      - interface: enp1s0
+        ip4: 10.10.3.22
+        mac: 1a:2b:3c:4d:31:42
+        network: net-admin
+    mgt1:
+      network_interfaces:
+      - interface: enp2s0
+        ip4: 10.10.0.1
+        mac: 1a:2b:3c:4d:10:9f
+        network: net-admin
+        never_default4: true
+      - interface: enp1s0
+        ip4: 192.168.1.20
+        network: external-network
+        skip: true
+    mgt3:

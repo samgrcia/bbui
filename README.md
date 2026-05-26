@@ -36,6 +36,56 @@ Files are merged alphabetically; last-writer-wins on conflicts. `group_vars/` is
 
 ---
 
+## BlueBanquise layout
+
+When bbui detects the BlueBanquise directory structure under `-I`, it automatically uses the stricter `BbInventory` mode.
+
+**Detection**: the presence of `cluster/nodes/` or `cluster/groups/` inside the inventory root.
+
+**Always point `-I` at the parent of `cluster/`, not at `cluster/` itself.**
+
+```
+inventory-root/           ← pass this to -I
+├── cluster/
+│   ├── nodes/
+│   │   ├── compute.yml   # hosts in fn_compute + their vars
+│   │   ├── login.yml     # hosts in fn_login + their vars
+│   │   └── management.yml
+│   └── groups/
+│       ├── fn            # fn_* group declarations (INI, no extension)
+│       ├── hw            # hw_* group declarations
+│       ├── os            # os_* group declarations
+│       └── others        # user-defined groups (default bucket)
+└── group_vars/
+    └── ...
+```
+
+### Mandatory group membership
+
+Every host **must** belong to exactly one group from each of the three base prefixes:
+
+| Prefix | Purpose | Example |
+|---|---|---|
+| `fn_` | Function (role) | `fn_compute`, `fn_management`, `fn_login` |
+| `hw_` | Hardware type | `hw_cpu_server_type_A`, `hw_gpu_type_B` |
+| `os_` | Operating system | `os_ubuntu_24`, `os_rhel_9` |
+
+```bash
+# Correct — all three prefixes present
+bbcli host add c[001-010] --groups fn_compute,hw_typeA,os_ubuntu -I ./inventory-root/
+
+# Error — missing hw_* group
+bbcli host add c011 --groups fn_compute,os_ubuntu -I ./inventory-root/
+```
+
+### Write-back routing
+
+On `commit`, each host is written back to the **same file it was loaded from**. A newly added host is co-located with its existing fn_* peers (alphabetically first peer file wins). If no peers exist yet, a new `cluster/nodes/<fn_suffix>.yml` is created.
+
+Non-base groups (anything other than `fn_`, `hw_`, `os_`) are written back to their source file if they were loaded from a named file, or to `cluster/groups/others` otherwise.
+
+---
+
 ## Nodeset syntax
 
 Any command that accepts a hostname also accepts a **ClusterShell NodeSet** expression:

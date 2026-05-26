@@ -1,3 +1,0 @@
-hw_equipment_type: server
-
-hw_console: console=tty0 console=ttyS0,9600n8

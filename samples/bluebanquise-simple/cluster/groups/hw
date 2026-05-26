@@ -1,16 +1,11 @@
 [hw_cpu_server_type_A]
-c00[1:4]
-
-[hw_gpu_server_type_B]
-g001
-g002
+c[001:004]
 
 [hw_cpu_server_type_C]
-mgt1
+mgt[1,3]
 
 [hw_cpu_server_type_C:children]
 hw_gpu_server_type_B
 
-[hw_cpu_server_type_C:vars]
-a=1
-b=2
+[hw_gpu_server_type_B]
+g[001:002]
