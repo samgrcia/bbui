@@ -475,17 +475,25 @@ def host_show(
             entries: list[tuple[Path, Any]],
             top_key: str,
         ) -> list[tuple[str, str, str, list[Path]]]:
-            """One row per source file, each with its own value when there are multiple."""
+            """One row per source file, each with its own value when there are multiple.
+
+            Continuation rows (beyond the first) have blank key and type so the
+            variable name is not repeated.
+            """
             if not entries:
                 return [(dotted_key, type_label, fallback_val, [])]
             if len(entries) == 1:
                 return [(dotted_key, type_label, fallback_val, [_rel_one(entries[0][0])])]
-            # Multiple sources: resolve the specific dotted value from each file's top-level value
             result = []
-            for path, top_val in entries:
+            for i, (path, top_val) in enumerate(entries):
                 found, val = _resolve_dotpath({top_key: top_val}, dotted_key)
                 v = _format_value(val) if found else "[dim]—[/dim]"
-                result.append((dotted_key, type_label, v, [_rel_one(path)]))
+                result.append((
+                    dotted_key if i == 0 else "",
+                    type_label if i == 0 else "",
+                    v,
+                    [_rel_one(path)],
+                ))
             return result
 
         for i, host in enumerate(hosts):
@@ -703,11 +711,30 @@ def vars_show(
     table.add_column("Value",  style="white")
     table.add_column("Source file", style="magenta")
 
+    top_key = _top_level_key(varname)
     for m in matches:
-        kind_str  = "host" if m.owner_kind == "host" else "group"
-        value_str = _format_value(m.value)
-        file_str  = "\n".join(str(p) for p in m.source_file) if m.source_file else "[dim]unknown[/dim]"
-        table.add_row(kind_str, m.owner_name, value_str, file_str)
+        kind_str = "host" if m.owner_kind == "host" else "group"
+
+        if var_source_map is not None and len(m.source_file) > 1:
+            # Multiple files: one row per file with that file's own value
+            entries = (
+                var_source_map.file_for_host_var(m.owner_name, top_key)
+                if m.owner_kind == "host"
+                else var_source_map.file_for_group_var(m.owner_name, top_key)
+            )
+            for i, (path, top_val) in enumerate(entries):
+                found, val = _resolve_dotpath({top_key: top_val}, varname)
+                v = _format_value(val) if found else _format_value(m.value)
+                table.add_row(
+                    kind_str if i == 0 else "",
+                    m.owner_name if i == 0 else "",
+                    v,
+                    str(path),
+                )
+        else:
+            value_str = _format_value(m.value)
+            file_str  = str(m.source_file[0]) if m.source_file else "[dim]unknown[/dim]"
+            table.add_row(kind_str, m.owner_name, value_str, file_str)
 
     rprint(table)
 
