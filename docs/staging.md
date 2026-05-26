@@ -1,47 +1,47 @@
-# Workflow de staging
+# Staging workflow
 
-bbui utilise un système de staging inspiré de git : les modifications sont accumulées en mémoire et ne sont jamais écrites sur disque sans un `commit` explicite.
+bbui uses a git-inspired staging system: changes accumulate in memory and are never written to disk without an explicit `commit`.
 
-Le staging est activé dès que vous utilisez `--inventory-dir` / `-I`.  
-Avec `--inventory` / `-i` (fichier unique), les modifications sont écrites immédiatement.
+Staging is enabled as soon as you use `--inventory-dir` / `-I`.  
+With `--inventory` / `-i` (single file), changes are written immediately.
 
 ---
 
-## Vue d'ensemble
+## Overview
 
 ```
 bbcli host add 'c[011:020]' --groups fn_compute,hw_typeA,os_ubuntu -I ./inventory/
       │
       ▼
-  [staging cache]   ←  inventory_cache.pkl (lecture) + cache.pkl (mutations)
+  [staging cache]   ←  inventory_cache.pkl (read) + cache.pkl (mutations)
       │
-      ├──  bbcli pending   →  aperçu des changements et des fichiers cibles
+      ├──  bbcli pending   →  preview changes and target files
       │
-      ├──  bbcli commit    →  écriture sur disque, nettoyage du cache
+      ├──  bbcli commit    →  write to disk, clear cache
       │
-      └──  bbcli discard   →  abandon des changements, nettoyage du cache
+      └──  bbcli discard   →  drop changes, clear cache
 ```
 
 ---
 
-## Les deux caches
+## The two caches
 
-Les caches vivent sous `<inventory-dir>/.bbui/` :
+Both caches live under `<inventory-dir>/.bbui/`:
 
-| Fichier | Rôle | Cycle de vie |
+| File | Purpose | Lifecycle |
 |---|---|---|
-| `inventory_cache.pkl` | Inventaire parsé (accélère les lectures successives) | Invalidé dès qu'un fichier source est plus récent |
-| `cache.pkl` | Mutations stagées (inventaire modifié + liste des changements) | Créé par `stage`, supprimé par `commit` ou `discard` |
+| `inventory_cache.pkl` | Parsed inventory (speeds up successive reads) | Invalidated when any source file is newer |
+| `cache.pkl` | Staged mutations (modified inventory + change list) | Created by `stage`, deleted by `commit` or `discard` |
 
-Quand `cache.pkl` est présent, toutes les commandes de lecture (`host list`, `host show`, etc.) l'utilisent et affichent un avertissement indiquant que des changements non commités sont actifs.
+While `cache.pkl` is present, all read commands (`host list`, `host show`, etc.) use it and display a warning that uncommitted changes are active.
 
 ---
 
-## Commandes
+## Commands
 
 ### `bbcli pending`
 
-Affiche les changements stagés et les fichiers qui seront écrits.
+Shows staged changes and the files that will be written.
 
 ```
 ┌─ Pending changes ────────────────────────────────────┐
@@ -60,10 +60,10 @@ Affiche les changements stagés et les fichiers qui seront écrits.
 
 ### `bbcli commit`
 
-Écrit toutes les mutations sur disque et supprime `cache.pkl`.
+Writes all mutations to disk and deletes `cache.pkl`.
 
-En layout BlueBanquise, chaque hôte est réécrit dans le fichier dont il provient.  
-Les nouveaux hôtes rejoignent le fichier de leurs pairs `fn_*` existants.
+In BlueBanquise layout, each host is written back to the file it was loaded from.  
+New hosts are co-located with existing peers of the same `fn_*` group.
 
 ```bash
 bbcli commit -I ./inventory/
@@ -74,33 +74,33 @@ bbcli commit -I ./inventory/
 
 ### `bbcli discard`
 
-Abandonne toutes les mutations sans écrire sur disque.
+Drops all staged mutations without writing to disk.
 
 ```bash
-bbcli discard -I ./inventory/          # demande confirmation
-bbcli discard -I ./inventory/ --force  # sans confirmation
+bbcli discard -I ./inventory/          # asks for confirmation
+bbcli discard -I ./inventory/ --force  # no confirmation
 ```
 
 ---
 
-## Comportement en cas de changements cumulés
+## Accumulating changes
 
-Plusieurs commandes successives s'accumulent dans le même `cache.pkl` :
+Multiple successive commands accumulate in the same `cache.pkl`:
 
 ```bash
 bbcli host add 'c[011:015]' --groups fn_compute,hw_typeA,os_ubuntu -I ./inventory/
 bbcli host add 'mgt3'       --groups fn_management,hw_typeC,os_rhel -I ./inventory/
 bbcli host remove c005 -I ./inventory/
-bbcli pending -I ./inventory/   # affiche les 3 changements ensemble
-bbcli commit  -I ./inventory/   # écrit tout en une passe
+bbcli pending -I ./inventory/   # shows all 3 changes together
+bbcli commit  -I ./inventory/   # writes everything in one pass
 ```
 
 ---
 
-## Cohérence des lectures
+## Read consistency
 
-Tant que `cache.pkl` est présent, les commandes de lecture (`host list`, `host show`, `vars show`) retournent l'état **stagé** et non l'état disque.  
-Un bandeau d'avertissement le signale :
+While `cache.pkl` is present, read commands (`host list`, `host show`, `vars show`) return the **staged** state rather than the on-disk state.  
+A warning banner indicates this:
 
 ```
 ⚠ Showing staged inventory (uncommitted changes present)

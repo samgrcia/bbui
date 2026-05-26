@@ -1,25 +1,25 @@
 site_name: bbui
-site_description: Gestionnaire d'inventaires Ansible en ligne de commande
+site_description: Command-line Ansible inventory manager
 site_url: https://samgrcia.github.io/bbui
 repo_url: https://github.com/samgrcia/bbui
 repo_name: samgrcia/bbui
 
 theme:
   name: material
-  language: fr
+  language: en
   palette:
     - scheme: default
       primary: indigo
       accent: indigo
       toggle:
         icon: material/brightness-7
-        name: Mode sombre
+        name: Switch to dark mode
     - scheme: slate
       primary: indigo
       accent: indigo
       toggle:
         icon: material/brightness-4
-        name: Mode clair
+        name: Switch to light mode
   features:
     - navigation.instant
     - navigation.sections
@@ -37,9 +37,9 @@ markdown_extensions:
       permalink: true
 
 nav:
-  - Accueil: index.md
+  - Home: index.md
   - Installation: installation.md
-  - Formats d'inventaire: inventory-layouts.md
-  - Syntaxe NodeSet: nodeset.md
-  - Workflow de staging: staging.md
-  - Référence CLI: cli-reference.md
+  - Inventory layouts: inventory-layouts.md
+  - NodeSet syntax: nodeset.md
+  - Staging workflow: staging.md
+  - CLI reference: cli-reference.md

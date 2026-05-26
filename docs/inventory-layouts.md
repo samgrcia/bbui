@@ -1,30 +1,30 @@
-# Formats d'inventaire
+# Inventory layouts
 
-bbui supporte deux layouts : un layout générique Ansible, et le layout structuré BlueBanquise.  
-La détection est automatique au lancement de toute commande.
+bbui supports two layouts: a generic Ansible layout and the structured BlueBanquise layout.  
+Detection is automatic on every command.
 
 ---
 
-## Layout générique
+## Generic layout
 
-Un répertoire contenant un mélange de fichiers YAML et INI.
+A directory containing any mix of YAML and INI files.
 
 ```
 inventory/
-├── hosts.yml           # hôtes en YAML
-├── staging.ini         # hôtes en INI
+├── hosts.yml           # hosts in YAML
+├── staging.ini         # hosts in INI
 └── group_vars/
-    ├── all.yml         # vars appliquées à tous les groupes
-    ├── webservers.yml  # vars pour le groupe "webservers"
-    └── databases/      # vars pour "databases" (layout répertoire)
+    ├── all.yml         # vars applied to all groups
+    ├── webservers.yml  # vars for group "webservers"
+    └── databases/      # vars for "databases" (directory layout)
         ├── main.yml
         └── secrets.yml
 ```
 
-Les fichiers sont chargés par ordre alphabétique. En cas de conflit, le dernier fichier l'emporte.  
-`group_vars/` est appliqué en dernier, comme dans Ansible.
+Files are loaded alphabetically; last-writer-wins on conflicts.  
+`group_vars/` is applied last, matching Ansible's own precedence rules.
 
-### Format YAML
+### YAML format
 
 ```yaml
 all:
@@ -36,7 +36,7 @@ all:
         web02:
 ```
 
-### Format INI
+### INI format
 
 ```ini
 [webservers]
@@ -50,58 +50,58 @@ ansible_become=true
 webservers
 ```
 
-Les sections `:vars` et `:children` sont supportées.
+`:vars` and `:children` sections are supported.
 
 ---
 
-## Layout BlueBanquise
+## BlueBanquise layout
 
-bbui détecte automatiquement le layout BlueBanquise dès que le répertoire passé à `-I` contient `cluster/nodes/` ou `cluster/groups/`.
+bbui automatically detects the BlueBanquise layout as soon as the directory passed to `-I` contains `cluster/nodes/` or `cluster/groups/`.
 
-> **Important** : passer `-I` au parent de `cluster/`, pas à `cluster/` lui-même.
+> **Important**: always point `-I` at the parent of `cluster/`, not at `cluster/` itself.
 
 ```
-inventory-root/           ← passer ce chemin à -I
+inventory-root/           ← pass this path to -I
 ├── cluster/
 │   ├── nodes/
-│   │   ├── compute.yml   # hôtes fn_compute + leurs vars
-│   │   ├── login.yml     # hôtes fn_login + leurs vars
+│   │   ├── compute.yml   # fn_compute hosts + their vars
+│   │   ├── login.yml     # fn_login hosts + their vars
 │   │   └── management.yml
 │   └── groups/
-│       ├── fn            # déclarations fn_* (INI, sans extension)
-│       ├── hw            # déclarations hw_*
-│       ├── os            # déclarations os_*
-│       └── others        # groupes utilisateur (bucket par défaut)
+│       ├── fn            # fn_* group declarations (INI, no extension)
+│       ├── hw            # hw_* group declarations
+│       ├── os            # os_* group declarations
+│       └── others        # user-defined groups (default bucket)
 └── group_vars/
     └── ...
 ```
 
-### Groupes obligatoires
+### Mandatory group membership
 
-Chaque hôte doit appartenir à **exactement un** groupe de chacun des trois préfixes :
+Every host **must** belong to exactly one group from each of the three base prefixes:
 
-| Préfixe | Rôle | Exemples |
+| Prefix | Purpose | Examples |
 |---|---|---|
-| `fn_` | Fonction (rôle fonctionnel) | `fn_compute`, `fn_management`, `fn_login` |
-| `hw_` | Type matériel | `hw_cpu_server_type_A`, `hw_gpu_type_B` |
-| `os_` | Système d'exploitation | `os_ubuntu_24`, `os_rhel_9` |
+| `fn_` | Function (functional role) | `fn_compute`, `fn_management`, `fn_login` |
+| `hw_` | Hardware type | `hw_cpu_server_type_A`, `hw_gpu_type_B` |
+| `os_` | Operating system | `os_ubuntu_24`, `os_rhel_9` |
 
 ```bash
-# Correct — les trois préfixes présents
+# Correct — all three prefixes present
 bbcli host add 'c[001:010]' --groups fn_compute,hw_typeA,os_ubuntu -I ./inventory-root/
 
-# Erreur — groupe hw_* manquant
+# Error — missing hw_* group
 bbcli host add c011 --groups fn_compute,os_ubuntu -I ./inventory-root/
 
-# Erreur — deux groupes fn_*
+# Error — two fn_* groups
 bbcli host add c012 --groups fn_compute,fn_login,hw_typeA,os_ubuntu -I ./inventory-root/
 ```
 
-### Routage des fichiers
+### File routing
 
-#### Fichiers de nœuds (`cluster/nodes/`)
+#### Node files (`cluster/nodes/`)
 
-Chaque fichier de nœuds est un YAML Ansible standard dont la clé racine est `all` :
+Each node file is a standard Ansible YAML file with `all` as the root key:
 
 ```yaml
 all:
@@ -111,14 +111,14 @@ all:
     c002:
 ```
 
-- Les hôtes **existants** sont réécrits dans le fichier source d'où ils ont été chargés.
-- Les **nouveaux** hôtes rejoignent le fichier de leurs pairs de même groupe `fn_*` (premier fichier par ordre alphabétique).
-- Si aucun pair n'existe encore, un nouveau fichier `<fn_suffix>.yml` est créé.
+- **Existing** hosts are written back to the file they were loaded from.
+- **New** hosts are co-located with existing peers of the same `fn_*` group (alphabetically first peer file wins).
+- If no peer exists yet, a new `<fn_suffix>.yml` file is created.
 
-#### Fichiers de groupes (`cluster/groups/`)
+#### Group files (`cluster/groups/`)
 
-Les fichiers de groupes sont en format INI (sans extension).  
-Les hôtes y apparaissent sous forme de **NodeSet Ansible** (`node[01:10]`) plutôt qu'un par ligne.
+Group files use INI format (no extension).  
+Hosts appear as **Ansible NodeSet** expressions (`node[01:10]`) rather than one per line.
 
 ```ini
 [fn_compute]
@@ -128,17 +128,17 @@ c[001:004]
 mgt[1:2]
 ```
 
-- Les groupes `fn_*`, `hw_*`, `os_*` sont toujours écrits dans leurs fichiers canoniques (`fn`, `hw`, `os`).
-- Les groupes utilisateur chargés depuis un fichier nommé y sont réécrits.
-- Les groupes utilisateur créés ex nihilo vont dans `cluster/groups/others`.
+- `fn_*`, `hw_*`, and `os_*` groups are always written to their canonical files (`fn`, `hw`, `os`).
+- User-defined groups loaded from a named file are written back to that same file.
+- User-defined groups created from scratch go to `cluster/groups/others`.
 
 ### Cache
 
-bbui maintient deux caches sous `<inventory-root>/.bbui/` :
+bbui maintains two caches under `<inventory-root>/.bbui/`:
 
-| Fichier | Rôle |
+| File | Purpose |
 |---|---|
-| `inventory_cache.pkl` | Inventaire parsé (cache lecture). Invalidé si un fichier source est plus récent. |
-| `cache.pkl` | Mutations stagées. Présent uniquement entre `stage` et `commit` / `discard`. |
+| `inventory_cache.pkl` | Parsed inventory (read cache). Invalidated when any source file is newer. |
+| `cache.pkl` | Staged mutations. Present only between `stage` and `commit` / `discard`. |
 
-Les caches sont invalidés automatiquement lorsque le type de layout change (ex. après une migration vers le layout BlueBanquise).
+Caches are automatically invalidated when the layout type changes (e.g. after migrating to the BlueBanquise layout).

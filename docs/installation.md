@@ -1,18 +1,18 @@
 # Installation
 
-## Prérequis
+## Requirements
 
-| Dépendance | Version |
+| Dependency | Version |
 |---|---|
 | Python | 3.14+ |
 | [ClusterShell](https://clustershell.readthedocs.io/) | ^1.9 |
-| [Poetry](https://python-poetry.org/) | Pour le développement |
+| [Poetry](https://python-poetry.org/) | For development |
 
-ClusterShell est installé automatiquement par Poetry.
+ClusterShell is installed automatically by Poetry.
 
 ---
 
-## Depuis le dépôt
+## From the repository
 
 ```bash
 git clone https://github.com/samgrcia/bbui.git
@@ -20,7 +20,7 @@ cd bbui
 poetry install
 ```
 
-Vérification :
+Verify:
 
 ```bash
 poetry run bbcli --help
@@ -28,18 +28,18 @@ poetry run bbcli --help
 
 ---
 
-## Variables d'environnement
+## Environment variables
 
-Plutôt que de passer `--inventory` ou `--inventory-dir` à chaque commande, vous pouvez les exporter :
+Instead of passing `--inventory` or `--inventory-dir` on every command, you can export them:
 
 ```bash
 export BBUI_INVENTORY_DIR=/path/to/my-inventory
-bbcli host list          # équivalent à bbcli host list -I /path/to/my-inventory
+bbcli host list          # equivalent to bbcli host list -I /path/to/my-inventory
 ```
 
-| Variable | Option équivalente | Description |
+| Variable | Equivalent option | Description |
 |---|---|---|
-| `BBUI_INVENTORY` | `--inventory` / `-i` | Chemin vers un fichier d'inventaire unique |
-| `BBUI_INVENTORY_DIR` | `--inventory-dir` / `-I` | Répertoire d'inventaire (active le staging) |
+| `BBUI_INVENTORY` | `--inventory` / `-i` | Path to a single inventory file |
+| `BBUI_INVENTORY_DIR` | `--inventory-dir` / `-I` | Inventory directory (enables staging) |
 
-Quand les deux sont définis, `--inventory-dir` / `BBUI_INVENTORY_DIR` a priorité.
+When both are set, `--inventory-dir` / `BBUI_INVENTORY_DIR` takes precedence.

@@ -1,47 +1,47 @@
 # bbui
 
-**bbui** est un gestionnaire d'inventaires Ansible en ligne de commande.  
-Il supporte les formats YAML et INI, le layout BlueBanquise, et un workflow de staging inspiré de git.
+**bbui** is a command-line Ansible inventory manager.  
+It supports YAML and INI formats, the BlueBanquise layout, and a git-like staging workflow.
 
 ---
 
-## Fonctionnalités
+## Features
 
-| Fonctionnalité | Description |
+| Feature | Description |
 |---|---|
-| Multi-format | Lecture et écriture YAML et INI |
-| BlueBanquise | Layout et règles de groupes enforced automatiquement |
-| Staging | Les modifications ne sont jamais écrites sans `commit` explicite |
-| NodeSet | Manipulation de plages d'hôtes (`c[001:100]`) |
-| Dot-notation | Inspection de variables imbriquées (`bmc.ip4`, `disks[0].name`) |
+| Multi-format | Read and write YAML and INI inventories |
+| BlueBanquise | Layout and group rules enforced automatically |
+| Staging | Changes are never written without an explicit `commit` |
+| NodeSet | Host range expressions (`c[001:100]`) via ClusterShell |
+| Dot-notation | Inspect nested variables (`bmc.ip4`, `disks[0].name`) |
 
 ---
 
-## Démarrage rapide
+## Quick start
 
 ```bash
-# Installation
+# Install
 poetry install
 
-# Lister les hôtes d'un inventaire
+# List hosts in an inventory
 bbcli host list -I ./my-inventory/
 
-# Ajouter des hôtes (BlueBanquise)
+# Add hosts (BlueBanquise layout)
 bbcli host add 'c[001:010]' --groups fn_compute,hw_typeA,os_ubuntu -I ./my-inventory/
 
-# Vérifier ce qui sera écrit
+# Review what will be written
 bbcli pending -I ./my-inventory/
 
-# Écrire sur disque
+# Write to disk
 bbcli commit -I ./my-inventory/
 ```
 
 ---
 
-## Pages de documentation
+## Documentation
 
 - [Installation](installation.md)
-- [Formats d'inventaire](inventory-layouts.md)
-- [Syntaxe NodeSet](nodeset.md)
-- [Workflow de staging](staging.md)
-- [Référence CLI](cli-reference.md)
+- [Inventory layouts](inventory-layouts.md)
+- [NodeSet syntax](nodeset.md)
+- [Staging workflow](staging.md)
+- [CLI reference](cli-reference.md)
