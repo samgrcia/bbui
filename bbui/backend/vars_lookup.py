@@ -25,6 +25,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from bbui.backend.bb_inventory import BbInventory
 from bbui.backend.models import Inventory
 
 
@@ -90,7 +91,8 @@ def build_var_source_map(inventory_dir: Path) -> VarSourceMap:
         if suffix not in YAML_SUFFIXES and suffix not in INI_SUFFIXES and suffix != "":
             continue
 
-        tmp = Inventory()
+        tmp = BbInventory()
+        tmp._loading = True
         try:
             fmt = _detect_format(filepath)
             if fmt == "yaml":

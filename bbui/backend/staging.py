@@ -158,6 +158,7 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
     Files are processed in the same alphabetical order as ``load_inventory_dir``
     so that last-writer-wins matches the merge behaviour.
     """
+    from bbui.backend.bb_inventory import BbInventory
     from bbui.backend.parser import (
         YAML_SUFFIXES, INI_SUFFIXES, GROUP_VARS_DIR,
         _load_yaml_file, _load_ini_file, _detect_format,
@@ -187,7 +188,8 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
         if suffix not in YAML_SUFFIXES and suffix not in INI_SUFFIXES and suffix != "":
             continue
 
-        tmp = Inventory()
+        tmp = BbInventory()
+        tmp._loading = True
         try:
             fmt = _detect_format(filepath)
             if fmt == "yaml":
@@ -289,8 +291,11 @@ def load_inventory_or_cache(inventory_dir: Path) -> Inventory:
     Priority:
     1. Staging cache (``cache.pkl``) — present when there are uncommitted changes.
     2. Read cache (``inventory_cache.pkl``) — valid when no source file is newer.
-    3. Full parse via ``load_inventory_dir()`` — rebuilds the read cache.
+    3. Full parse — rebuilds the read cache.  Uses :class:`BbInventory` when the
+       directory follows the BlucBanquise layout (contains ``nodes/`` or ``groups/``).
     """
+    from bbui.backend.bb_inventory import BbInventory, is_bb_layout
+
     # 1. Staging cache takes absolute priority
     if has_pending(inventory_dir):
         return load_cache(inventory_dir).inventory
@@ -301,7 +306,10 @@ def load_inventory_or_cache(inventory_dir: Path) -> Inventory:
         return cached
 
     # 3. Full parse + persist read cache
-    inventory = load_inventory_dir(inventory_dir)
+    if is_bb_layout(inventory_dir):
+        inventory: Inventory = BbInventory.load(inventory_dir)
+    else:
+        inventory = load_inventory_dir(inventory_dir)
     _save_inv_cache(inventory, inventory_dir)
     return inventory
 
@@ -348,12 +356,12 @@ def stage(
 def commit(inventory_dir: Path) -> dict[Path, int]:
     """Write pending changes to disk and clear the cache.
 
-    Strategy
-    --------
-    For each inventory file, we reload it in isolation, apply only the
-    changes that are relevant to it (additions of hosts/groups that
-    originate from it, removals of hosts/groups that appeared in it),
-    then write it back.  This guarantees that:
+    For BlucBanquise inventories (:class:`BbInventory`) the staged inventory
+    is written via :meth:`BbInventory.dump`, which rewrites the whole
+    ``nodes/`` + ``groups/`` layout in one shot.
+
+    For all other inventories the standard file-by-file patching strategy is
+    used:
 
     * A host removed from the global inventory is removed from **every**
       file that referenced it, not just its primary origin file.
@@ -361,13 +369,29 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
 
     Returns a mapping  {file_path: nb_of_changes_applied}.
     """
+    from bbui.backend.bb_inventory import BbInventory
+
+    staging_area = load_cache(inventory_dir)
+
+    # ── BlucBanquise fast path ──────────────────────────────────────────────
+    if isinstance(staging_area.inventory, BbInventory):
+        bb_inv = staging_area.inventory
+        if bb_inv.root_dir is None:
+            bb_inv.root_dir = inventory_dir
+        written = bb_inv.dump()
+        discard(inventory_dir)
+        fresh: Inventory = BbInventory.load(inventory_dir)
+        _save_inv_cache(fresh, inventory_dir)
+        return {p: 1 for p in written}
+
+    # ── Standard path ───────────────────────────────────────────────────────
     from bbui.backend.parser import (
         YAML_SUFFIXES, INI_SUFFIXES, GROUP_VARS_DIR,
         _load_yaml_file, _load_ini_file, _detect_format,
         dump_inventory,
     )
 
-    staging = load_cache(inventory_dir)
+    staging = staging_area
     inv     = staging.inventory   # final desired state
     smap    = staging.source_map
     changes = staging.changes
