@@ -159,7 +159,7 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
     so that last-writer-wins matches the merge behaviour.
     """
     from bbui.backend.parser import (
-        YAML_SUFFIXES, INI_SUFFIXES, GROUP_VARS_DIR,
+        YAML_SUFFIXES, INI_SUFFIXES, GROUP_VARS_DIR, VAULT_STEM,
         _load_yaml_file, _load_ini_file, _detect_format,
     )
 
@@ -170,6 +170,8 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
         if not filepath.is_file():
             continue
         if GROUP_VARS_DIR in filepath.parts:
+            continue
+        if filepath.stem.lower() == VAULT_STEM:
             continue
         suffix = filepath.suffix.lower()
         if suffix in YAML_SUFFIXES:
@@ -182,6 +184,8 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
         if not filepath.is_file():
             continue
         if GROUP_VARS_DIR in filepath.parts:
+            continue
+        if filepath.stem.lower() == VAULT_STEM:
             continue
         suffix = filepath.suffix.lower()
         if suffix not in YAML_SUFFIXES and suffix not in INI_SUFFIXES and suffix != "":

@@ -45,7 +45,7 @@ import yaml
 
 from bbui.backend.models import Group, Host, Inventory
 from bbui.backend.nodeset import fold_ansible
-from bbui.backend.parser import _expand_hostpattern, _load_group_vars  # type: ignore[attr-defined]
+from bbui.backend.parser import _expand_hostpattern, _load_group_vars, VAULT_STEM  # type: ignore[attr-defined]
 
 # ---------------------------------------------------------------------------
 # YAML helpers
@@ -320,6 +320,8 @@ class BbInventory(Inventory):
         if not nodes_dir.is_dir():
             return pending
         for filepath in sorted(nodes_dir.glob("*.yml")):
+            if filepath.stem.lower() == VAULT_STEM:
+                continue
             with filepath.open("r", encoding="utf-8") as fh:
                 data = yaml.safe_load(fh) or {}
             hosts_data: dict[str, Any] = (data.get("all") or {}).get("hosts") or {}
@@ -349,6 +351,8 @@ class BbInventory(Inventory):
 
         for filepath in sorted(groups_dir.iterdir()):
             if not filepath.is_file():
+                continue
+            if filepath.stem.lower() == VAULT_STEM:
                 continue
             self._parse_ini_group_file(filepath, host_groups, group_meta)
 

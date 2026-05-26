@@ -36,6 +36,7 @@ from bbui.backend.models import Inventory
 YAML_SUFFIXES = {".yml", ".yaml"}
 INI_SUFFIXES  = {".ini", ".cfg"}
 GROUP_VARS_DIR = "group_vars"
+VAULT_STEM    = "vault"  # Ansible-vault encrypted files — skipped during parsing
 
 # Ansible INI: optional inline vars  web01 ansible_user=ubuntu ansible_port=22
 _INI_HOST_RE = re.compile(r"^(?P<host>\S+)(?P<vars>(\s+\S+=\S+)*)$")
@@ -240,6 +241,8 @@ def _load_group_vars(inventory: Inventory, group_vars_dir: Path) -> None:
     for entry in sorted(group_vars_dir.iterdir()):
         if entry.is_file() and entry.suffix.lower() in YAML_SUFFIXES:
             # File layout: group_vars/webservers.yml
+            if entry.stem.lower() == VAULT_STEM:
+                continue
             group_name = entry.stem
             _apply(group_name, _read_yaml(entry))
 
@@ -248,6 +251,8 @@ def _load_group_vars(inventory: Inventory, group_vars_dir: Path) -> None:
             group_name = entry.name
             merged: dict[str, Any] = {}
             for yaml_file in sorted(entry.glob("*.yml")) + sorted(entry.glob("*.yaml")):  # type: ignore[operator]
+                if yaml_file.stem.lower() == VAULT_STEM:
+                    continue
                 merged.update(_read_yaml(yaml_file))
             if merged:
                 _apply(group_name, merged)
@@ -352,6 +357,8 @@ def load_inventory_dir(directory: str | Path) -> Inventory:
             continue
         # Skip anything inside group_vars/ — handled separately below
         if GROUP_VARS_DIR in filepath.parts:
+            continue
+        if filepath.stem.lower() == VAULT_STEM:
             continue
         _try_load(filepath)
 
