@@ -18,6 +18,7 @@ pytest = "^8.0"
 pytest-cov = "^5.0"
 ruff = "^0.8.0"
 mypy = "^1.13"
+mkdocs-material = "^9.7.6"
 
 [tool.poetry.scripts]
 bbcli = "bbui.cli.main:app"
