@@ -14,6 +14,7 @@ It supports YAML and INI formats, the BlueBanquise layout, and a git-like stagin
 | Staging | Changes are never written without an explicit `commit` |
 | NodeSet | Host range expressions (`c[001:100]`) via ClusterShell |
 | Dot-notation | Inspect nested variables (`bmc.ip4`, `disks[0].name`) |
+| Auto-discovery | Detects `inventory/` inside the current working directory |
 
 ---
 
@@ -23,17 +24,21 @@ It supports YAML and INI formats, the BlueBanquise layout, and a git-like stagin
 # Install
 poetry install
 
-# List hosts in an inventory
-bbcli host list -I ./my-inventory/
+# Run from your project directory — bbcli auto-discovers inventory/
+cd my-project/
+bbcli host list
+
+# Or pass the working directory explicitly
+bbcli host list -I ./my-project/
 
 # Add hosts (BlueBanquise layout)
-bbcli host add 'c[001:010]' --groups fn_compute,hw_typeA,os_ubuntu -I ./my-inventory/
+bbcli host add 'c[001:010]' --groups fn_compute,hw_typeA,os_ubuntu -I ./my-project/
 
 # Review what will be written
-bbcli pending -I ./my-inventory/
+bbcli pending -I ./my-project/
 
 # Write to disk
-bbcli commit -I ./my-inventory/
+bbcli commit -I ./my-project/
 ```
 
 ---

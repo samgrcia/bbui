@@ -5,20 +5,37 @@ Detection is automatic on every command.
 
 ---
 
+## Workdir structure
+
+Regardless of the layout, the inventory must live inside a dedicated `inventory/` subdirectory of the working directory:
+
+```
+<workdir>/                  ← pass to -I, or run bbcli from here
+└── inventory/              ← bbui reads exclusively from here
+    ├── ...                 # inventory files
+    └── group_vars/
+```
+
+`-I <workdir>` and `BBUI_INVENTORY_DIR=<workdir>` both point to the **workdir**, not to `inventory/` itself.  
+Auto-discovery (no flag) uses `<cwd>/inventory/`.
+
+---
+
 ## Generic layout
 
 A directory containing any mix of YAML and INI files.
 
 ```
-inventory/
-├── hosts.yml           # hosts in YAML
-├── staging.ini         # hosts in INI
-└── group_vars/
-    ├── all.yml         # vars applied to all groups
-    ├── webservers.yml  # vars for group "webservers"
-    └── databases/      # vars for "databases" (directory layout)
-        ├── main.yml
-        └── secrets.yml
+<workdir>/
+└── inventory/
+    ├── hosts.yml           # hosts in YAML
+    ├── staging.ini         # hosts in INI
+    └── group_vars/
+        ├── all.yml         # vars applied to all groups
+        ├── webservers.yml  # vars for group "webservers"
+        └── databases/      # vars for "databases" (directory layout)
+            ├── main.yml
+            └── secrets.yml
 ```
 
 Files are loaded alphabetically; last-writer-wins on conflicts.  
@@ -56,24 +73,23 @@ webservers
 
 ## BlueBanquise layout
 
-bbui automatically detects the BlueBanquise layout as soon as the directory passed to `-I` contains `cluster/nodes/` or `cluster/groups/`.
-
-> **Important**: always point `-I` at the parent of `cluster/`, not at `cluster/` itself.
+bbui automatically detects the BlueBanquise layout as soon as `inventory/` contains `cluster/nodes/` or `cluster/groups/`.
 
 ```
-inventory-root/           ← pass this path to -I
-├── cluster/
-│   ├── nodes/
-│   │   ├── compute.yml   # fn_compute hosts + their vars
-│   │   ├── login.yml     # fn_login hosts + their vars
-│   │   └── management.yml
-│   └── groups/
-│       ├── fn            # fn_* group declarations (INI, no extension)
-│       ├── hw            # hw_* group declarations
-│       ├── os            # os_* group declarations
-│       └── others        # user-defined groups (default bucket)
-└── group_vars/
-    └── ...
+<workdir>/
+└── inventory/
+    ├── cluster/
+    │   ├── nodes/
+    │   │   ├── compute.yml   # fn_compute hosts + their vars
+    │   │   ├── login.yml     # fn_login hosts + their vars
+    │   │   └── management.yml
+    │   └── groups/
+    │       ├── fn            # fn_* group declarations (INI, no extension)
+    │       ├── hw            # hw_* group declarations
+    │       ├── os            # os_* group declarations
+    │       └── others        # user-defined groups (default bucket)
+    └── group_vars/
+        └── ...
 ```
 
 ### Mandatory group membership
@@ -88,13 +104,13 @@ Every host **must** belong to exactly one group from each of the three base pref
 
 ```bash
 # Correct — all three prefixes present
-bbcli host add 'c[001:010]' --groups fn_compute,hw_typeA,os_ubuntu -I ./inventory-root/
+bbcli host add 'c[001:010]' --groups fn_compute,hw_typeA,os_ubuntu -I ./my-project/
 
 # Error — missing hw_* group
-bbcli host add c011 --groups fn_compute,os_ubuntu -I ./inventory-root/
+bbcli host add c011 --groups fn_compute,os_ubuntu -I ./my-project/
 
 # Error — two fn_* groups
-bbcli host add c012 --groups fn_compute,fn_login,hw_typeA,os_ubuntu -I ./inventory-root/
+bbcli host add c012 --groups fn_compute,fn_login,hw_typeA,os_ubuntu -I ./my-project/
 ```
 
 ### File routing
@@ -134,7 +150,7 @@ mgt[1:2]
 
 ### Cache
 
-bbui maintains two caches under `<inventory-root>/.bbui/`:
+bbui maintains two caches under `inventory/.bbui/`:
 
 | File | Purpose |
 |---|---|

@@ -12,52 +12,64 @@ poetry install
 
 ---
 
-## Inventory directory layout
+## Workdir and inventory discovery
 
-bbui reads a directory (`BBUI_INVENTORY_DIR`) containing any mix of YAML and INI Ansible inventory files, plus the standard `group_vars/` hierarchy:
+bbui resolves the active inventory using the following priority:
+
+| Priority | How | Inventory loaded from |
+|---|---|---|
+| 1 | `--inventory-dir PATH` / `-I PATH` | `PATH/inventory/` |
+| 2 | `BBUI_INVENTORY_DIR=PATH` env var | `PATH/inventory/` |
+| 3 | Auto-discovery (no flag) | `<cwd>/inventory/` |
+| 4 | `--inventory FILE` / `-i FILE` | `FILE` (single file, no staging) |
+
+`-I` and `BBUI_INVENTORY_DIR` point to the **working directory** — bbui always looks for the `inventory/` subdirectory inside it.  
+Running bbcli from a workdir without any flag has the same effect as passing `-I ./`.
+
+---
+
+## Workdir layout
 
 ```
-inventory/
-├── cluster/
-│   ├── nodes/
-│   │   └── web.yml          # host declarations
-│   └── groups/
-│       └── webservers.yml   # group declarations
-├── staging.ini              # additional INI inventory
-└── group_vars/
-    ├── all.yml              # vars applied to every group
-    ├── webservers.yml       # vars for group "webservers"  (file layout)
-    └── databases/           # vars for group "databases"   (directory layout)
-        ├── main.yml
-        └── secrets.yml
+<workdir>/                  ← pass to -I, or run bbcli from here
+└── inventory/              ← bbui reads exclusively from here
+    ├── cluster/
+    │   ├── nodes/
+    │   │   └── web.yml     # host declarations
+    │   └── groups/
+    │       └── webservers  # group declarations (INI, no extension)
+    ├── staging.ini         # additional INI inventory (generic layout)
+    └── group_vars/
+        ├── all.yml         # vars applied to every group
+        ├── webservers.yml  # vars for group "webservers"
+        └── databases/      # vars for group "databases" (directory layout)
+            ├── main.yml
+            └── secrets.yml
 ```
 
-Files are merged alphabetically; last-writer-wins on conflicts. `group_vars/` is applied last, matching Ansible's own precedence rules.
+Files are merged alphabetically; last-writer-wins on conflicts. `group_vars/` is applied last.
 
 ---
 
 ## BlueBanquise layout
 
-When bbui detects the BlueBanquise directory structure under `-I`, it automatically uses the stricter `BbInventory` mode.
-
-**Detection**: the presence of `cluster/nodes/` or `cluster/groups/` inside the inventory root.
-
-**Always point `-I` at the parent of `cluster/`, not at `cluster/` itself.**
+When bbui detects `cluster/nodes/` or `cluster/groups/` inside `inventory/`, it automatically enables the stricter `BbInventory` mode.
 
 ```
-inventory-root/           ← pass this to -I
-├── cluster/
-│   ├── nodes/
-│   │   ├── compute.yml   # hosts in fn_compute + their vars
-│   │   ├── login.yml     # hosts in fn_login + their vars
-│   │   └── management.yml
-│   └── groups/
-│       ├── fn            # fn_* group declarations (INI, no extension)
-│       ├── hw            # hw_* group declarations
-│       ├── os            # os_* group declarations
-│       └── others        # user-defined groups (default bucket)
-└── group_vars/
-    └── ...
+<workdir>/
+└── inventory/
+    ├── cluster/
+    │   ├── nodes/
+    │   │   ├── compute.yml   # hosts in fn_compute + their vars
+    │   │   ├── login.yml
+    │   │   └── management.yml
+    │   └── groups/
+    │       ├── fn            # fn_* group declarations (INI, no extension)
+    │       ├── hw            # hw_* group declarations
+    │       ├── os            # os_* group declarations
+    │       └── others        # user-defined groups
+    └── group_vars/
+        └── ...
 ```
 
 ### Mandatory group membership
@@ -72,17 +84,15 @@ Every host **must** belong to exactly one group from each of the three base pref
 
 ```bash
 # Correct — all three prefixes present
-bbcli host add c[001-010] --groups fn_compute,hw_typeA,os_ubuntu -I ./inventory-root/
+bbcli host add c[001-010] --groups fn_compute,hw_typeA,os_ubuntu -I ./my-project/
 
 # Error — missing hw_* group
-bbcli host add c011 --groups fn_compute,os_ubuntu -I ./inventory-root/
+bbcli host add c011 --groups fn_compute,os_ubuntu -I ./my-project/
 ```
 
 ### Write-back routing
 
-On `commit`, each host is written back to the **same file it was loaded from**. A newly added host is co-located with its existing fn_* peers (alphabetically first peer file wins). If no peers exist yet, a new `cluster/nodes/<fn_suffix>.yml` is created.
-
-Non-base groups (anything other than `fn_`, `hw_`, `os_`) are written back to their source file if they were loaded from a named file, or to `cluster/groups/others` otherwise.
+On `commit`, each host is written back to the file it was loaded from. A newly added host is co-located with its existing `fn_*` peers. Non-base groups go to `cluster/groups/others` unless they were loaded from a named file.
 
 ---
 
@@ -105,11 +115,11 @@ Any command that accepts a hostname also accepts a **ClusterShell NodeSet** expr
 
 bbui uses a **git-like staging layer** so changes are never written to disk without an explicit commit.
 
-```
-bbcli host add web[11-20] --groups webservers,staging -I ./inventory/
-bbcli pending   -I ./inventory/     # review what will be written and where
-bbcli commit    -I ./inventory/     # write to disk
-bbcli discard   -I ./inventory/     # abandon changes
+```bash
+bbcli host add web[11-20] --groups webservers,staging -I ./my-project/
+bbcli pending   -I ./my-project/    # review what will be written and where
+bbcli commit    -I ./my-project/    # write to disk
+bbcli discard   -I ./my-project/    # abandon changes
 ```
 
 Two cache files live under `inventory/.bbui/`:
@@ -127,90 +137,55 @@ Two cache files live under `inventory/.bbui/`:
 
 ```bash
 # Add one or more hosts (NodeSet syntax supported)
-bbcli host add web01 -I ./inventory/
-bbcli host add 'web[01:10]' --groups webservers,staging -I ./inventory/
+bbcli host add web01 -I ./my-project/
+bbcli host add 'web[01:10]' --groups webservers,staging -I ./my-project/
 
 # Remove a host
-bbcli host remove web01 -I ./inventory/
+bbcli host remove web01 -I ./my-project/
 
-# List all hosts (NodeSet-folded group column)
-bbcli host list -I ./inventory/
+# List all hosts
+bbcli host list -I ./my-project/
 
-# Show host details and all variables (dot-notation table)
-bbcli host show web01 -I ./inventory/
+# Show host details and variables (dot-notation table)
+bbcli host show web01 -I ./my-project/
 ```
 
 ### Group management
 
 ```bash
-# Add / remove a group
-bbcli group add databases -I ./inventory/
-bbcli group remove databases -I ./inventory/
-
-# List all groups (hosts displayed as folded NodeSet)
-bbcli group list -I ./inventory/
-
-# Show group details and all variables (dot-notation table)
-bbcli group show webservers -I ./inventory/
+bbcli group add databases   -I ./my-project/
+bbcli group remove databases -I ./my-project/
+bbcli group list            -I ./my-project/
+bbcli group show webservers -I ./my-project/
 ```
 
 ### Variable inspection
 
 ```bash
 # Show every host and group that defines a variable, with source file
-bbcli vars show ansible_user -I ./inventory/
+bbcli vars show ansible_user -I ./my-project/
 
 # Dot-notation for nested variables
-bbcli vars show network.ip -I ./inventory/
-bbcli vars show disks[0].name -I ./inventory/
+bbcli vars show network.ip      -I ./my-project/
+bbcli vars show disks[0].name   -I ./my-project/
 
 # Filter to hosts or groups only
-bbcli vars show ansible_user -I ./inventory/ --hosts
-bbcli vars show ntp_server   -I ./inventory/ --groups
-```
-
-Example output:
-
-```
-         Variable: ansible_user
-┏━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-│ Kind  │ Owner      │ Value  │ Source file                           │
-│ host  │ web01      │ ubuntu │ inventory/cluster/nodes/web.yml       │
-│ host  │ web02      │ ubuntu │ inventory/cluster/nodes/web.yml       │
-│ group │ webservers │ deploy │ inventory/group_vars/webservers.yml   │
-┗━━━━━━━┻━━━━━━━━━━━━┻━━━━━━━━┻━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+bbcli vars show ansible_user -I ./my-project/ --hosts
+bbcli vars show ntp_server   -I ./my-project/ --groups
 ```
 
 ### Staging commands
 
 ```bash
-bbcli pending  -I ./inventory/          # show staged changes and target files
-bbcli commit   -I ./inventory/          # write changes to disk
-bbcli discard  -I ./inventory/          # abandon changes (asks for confirmation)
-bbcli discard  -I ./inventory/ --force  # abandon without confirmation
-```
-
-`bbcli pending` output groups individual host changes into NodeSets:
-
-```
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-│   │ Type         │ Nodeset / Subject │ Detail        │
-│ + │ host added   │ web[11-20]        │ groups=[...] │
-│ - │ host removed │ web05             │              │
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
-
-┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
-│ File                            │ Changes                    │
-│ inventory/cluster/nodes/web.yml │ + web[11-20]  - web05      │
-│ inventory/staging.ini           │ - web05                    │
-┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
+bbcli pending  -I ./my-project/          # show staged changes
+bbcli commit   -I ./my-project/          # write changes to disk
+bbcli discard  -I ./my-project/          # abandon changes
+bbcli discard  -I ./my-project/ --force  # abandon without confirmation
 ```
 
 ---
 
 ## Variable display format
-
-`host show` and `group show` display variables as a flat dot-notation table:
 
 | Type | Key format | Example |
 |---|---|---|
@@ -224,10 +199,10 @@ bbcli discard  -I ./inventory/ --force  # abandon without confirmation
 
 ## Environment variables
 
-| Variable | Description |
-|---|---|
-| `BBUI_INVENTORY` | Path to a single inventory file (used when `--inventory-dir` is not set) |
-| `BBUI_INVENTORY_DIR` | Path to the inventory directory (enables staging workflow) |
+| Variable | Equivalent option | Description |
+|---|---|---|
+| `BBUI_INVENTORY_DIR` | `--inventory-dir` / `-I` | Working directory — inventory loaded from `PATH/inventory/` |
+| `BBUI_INVENTORY` | `--inventory` / `-i` | Path to a single inventory file (single-file mode, no staging) |
 
 ---
 
