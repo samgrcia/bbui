@@ -30,6 +30,7 @@ List of dicts:
 
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Any
 
 from rich.table import Table
@@ -71,6 +72,33 @@ def _flatten_value(key: str, value: Any, rows: list[tuple[str, str]]) -> None:
 
     else:
         rows.append((key, str(value) if value is not None else ""))
+
+
+def host_vars_table(
+    rows: list[tuple[str, str, str, list[Path]]],
+    show_files: bool = False,
+) -> Table:
+    """Build a Rich table for ``host show`` output.
+
+    Each row is ``(dotted_key, type_label, str_value, files)`` where:
+    - *type_label* is ``"hostvar"`` or ``"groupvar (<group>)"``
+    - *files* lists every file that contributed the top-level variable key
+    """
+    table = Table(show_header=True, show_lines=False, box=None, padding=(0, 2))
+    table.add_column("Variable", style="yellow", no_wrap=True)
+    table.add_column("Type",     style="dim",    no_wrap=True)
+    table.add_column("Value",    style="white")
+    if show_files:
+        table.add_column("File", style="magenta")
+
+    for dotted_key, type_label, str_value, files in rows:
+        if show_files:
+            file_str = "\n".join(str(f) for f in files) if files else "[dim]—[/dim]"
+            table.add_row(dotted_key, type_label, str_value, file_str)
+        else:
+            table.add_row(dotted_key, type_label, str_value)
+
+    return table
 
 
 def vars_table(vars_dict: dict[str, Any], title: str = "Variables") -> Table:
