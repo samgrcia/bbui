@@ -402,3 +402,25 @@ class TestBbInventoryLoad:
         assert "c001" in storage_text
         assert "c002" in storage_text
         assert not (root / "cluster" / "groups" / "others").exists()
+
+    def test_new_host_written_to_existing_source_file(self, tmp_path: Path) -> None:
+        """A new host goes into the same nodes file as its fn_* peers, not a new file."""
+        root = _make_bb_root(tmp_path)
+        inv0 = BbInventory()
+        inv0.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv0.write(root)
+        # Rename the generated file to simulate an existing single-file layout
+        generated = root / "cluster" / "nodes" / "compute.yml"
+        shared = root / "cluster" / "nodes" / "nodes.yml"
+        generated.rename(shared)
+
+        inv = BbInventory.load(root)
+        inv.add_host("c002", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.write(root)
+
+        # Only nodes.yml must exist — no new compute.yml should be created
+        assert shared.exists()
+        assert not generated.exists()
+        content = yaml.safe_load(shared.read_text())
+        assert "c001" in content["all"]["hosts"]
+        assert "c002" in content["all"]["hosts"]

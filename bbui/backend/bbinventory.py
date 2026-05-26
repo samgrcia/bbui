@@ -74,6 +74,14 @@ class BbInventory(Inventory):
         # Tracks the source file for each non-base group so that
         # write() can send it back to the right place.
         self._group_source: dict[str, Path] = {}
+        # Tracks the source nodes file for each host loaded from disk.
+        # New hosts (not yet on disk) are absent from this dict.
+        self._host_source: dict[str, Path] = {}
+
+    def __setstate__(self, state: dict) -> None:
+        state.setdefault("_host_source", {})
+        state.setdefault("_group_source", {})
+        self.__dict__.update(state)
 
     # -----------------------------------------------------------------------
     # Overridden mutating methods
@@ -177,27 +185,49 @@ class BbInventory(Inventory):
         written.extend(self._write_groups(inventory_dir))
         return written
 
-    def _write_nodes(self, inventory_dir: Path) -> list[Path]:
-        """Write one ``cluster/nodes/<fn_suffix>.yml`` per fn_* group."""
-        # Bucket hosts by their fn_ group.
-        fn_buckets: dict[str, list[Host]] = {}
-        for host in self.list_hosts():
-            for g in host.groups:
-                if g.startswith("fn_"):
-                    fn_buckets.setdefault(g, []).append(host)
-                    break  # a host belongs to at most one fn_ group
+    def _target_nodes_file(self, host: Host, inventory_dir: Path) -> Path:
+        """Return the file where *host*'s vars should be written.
 
+        Existing hosts go back to their source file.  New hosts (no source)
+        are co-located with other hosts sharing the same fn_* group; if none
+        exist yet, a new per-fn-group file is created.
+        """
+        if host.name in self._host_source:
+            return self._host_source[host.name]
+        fn_group = next((g for g in host.groups if g.startswith("fn_")), None)
+        if fn_group:
+            peer_sources = {
+                self._host_source[h.name]
+                for h in self.list_hosts()
+                if fn_group in h.groups and h.name in self._host_source
+            }
+            if peer_sources:
+                return min(peer_sources)  # alphabetically first = deterministic
+        return self.nodes_file(fn_group, inventory_dir) if fn_group else inventory_dir / NODES_DIR / "nodes.yml"
+
+    def _write_nodes(self, inventory_dir: Path) -> list[Path]:
+        """Write node vars back to each host's source file.
+
+        Existing hosts go back to the file they were loaded from.
+        New hosts are written alongside existing hosts of the same fn_* group,
+        or to a new per-fn-group file when no peer exists.
+        """
         nodes_dir = inventory_dir / NODES_DIR
         nodes_dir.mkdir(parents=True, exist_ok=True)
-        written: list[Path] = []
 
-        for fn_group, hosts in sorted(fn_buckets.items()):
+        file_buckets: dict[Path, list[Host]] = {}
+        for host in self.list_hosts():
+            target = self._target_nodes_file(host, inventory_dir)
+            file_buckets.setdefault(target, []).append(host)
+
+        written: list[Path] = []
+        for filepath, hosts in sorted(file_buckets.items()):
             hosts_block: dict[str, Any] = {
                 host.name: (host.vars if host.vars else None)
                 for host in sorted(hosts, key=lambda h: h.name)
             }
             data: dict[str, Any] = {"all": {"hosts": hosts_block}}
-            filepath = self.nodes_file(fn_group, inventory_dir)
+            filepath.parent.mkdir(parents=True, exist_ok=True)
             with filepath.open("w", encoding="utf-8") as fh:
                 yaml.dump(data, fh, default_flow_style=False, allow_unicode=True, sort_keys=True)
             written.append(filepath)
@@ -259,6 +289,7 @@ class BbInventory(Inventory):
         inv: BbInventory = cls.__new__(cls)
         Inventory.__init__(inv)
         inv._group_source = {}
+        inv._host_source = {}
 
         pending_vars = inv._collect_node_vars(inventory_dir)
         inv._load_groups(inventory_dir, pending_vars)
@@ -277,6 +308,7 @@ class BbInventory(Inventory):
             hosts_data: dict[str, Any] = (data.get("all") or {}).get("hosts") or {}
             for hostname, vars_data in hosts_data.items():
                 pending[str(hostname)] = vars_data or {}
+                self._host_source[str(hostname)] = filepath
         return pending
 
     def _load_groups(

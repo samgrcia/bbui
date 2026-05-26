@@ -340,10 +340,29 @@ def stage(
         source_map = _build_source_map(inventory_dir)
         all_changes = changes
 
-    # Annotate each new change with its primary target file (first alphabetically).
-    # commit() will propagate to ALL files that contain the subject.
+    # Annotate each new change with its primary target file.
+    # For BbInventory, use _target_nodes_file() / group_file() which honour the
+    # source-file tracking and produce correct paths for both existing and new
+    # subjects.  For generic inventories, fall back to the source-map heuristic.
+    from bbui.backend.bbinventory import BbInventory
+    is_bb = isinstance(inventory, BbInventory)
+
     for change in changes:
-        if change.target_file is None:
+        if change.target_file is not None:
+            continue
+        if is_bb:
+            if change.kind == ChangeKind.HOST_ADDED:
+                host = inventory.get_host(change.subject)
+                change.target_file = inventory._target_nodes_file(host, inventory_dir)
+            elif change.kind == ChangeKind.HOST_REMOVED:
+                # Removed hosts: point to their known source file (or default nodes dir)
+                change.target_file = inventory._host_source.get(
+                    change.subject,
+                    inventory_dir / "cluster" / "nodes" / "nodes.yml",
+                )
+            elif change.kind in (ChangeKind.GROUP_ADDED, ChangeKind.GROUP_REMOVED):
+                change.target_file = inventory.group_file(change.subject, inventory_dir)
+        else:
             files = (
                 source_map.hosts.get(change.subject)
                 or source_map.groups.get(change.subject)
@@ -566,11 +585,17 @@ def affected_files(staging: StagingArea) -> dict[Path, list[Change]]:
             for f in smap.groups.get(subject, set()):
                 _add(f, c)
         elif c.kind == ChangeKind.HOST_ADDED:
-            files = smap.hosts.get(subject, set())
-            _add(min(files) if files else smap.default_file, c)
+            if c.target_file:
+                _add(c.target_file, c)
+            else:
+                files = smap.hosts.get(subject, set())
+                _add(min(files) if files else smap.default_file, c)
         elif c.kind == ChangeKind.GROUP_ADDED:
-            files = smap.groups.get(subject, set())
-            _add(min(files) if files else smap.default_file, c)
+            if c.target_file:
+                _add(c.target_file, c)
+            else:
+                files = smap.groups.get(subject, set())
+                _add(min(files) if files else smap.default_file, c)
         else:
             _add(c.target_file or smap.default_file, c)
 
