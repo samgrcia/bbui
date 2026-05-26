@@ -58,7 +58,7 @@ InventoryDirOption = Annotated[
     Optional[Path],
     typer.Option(
         "--inventory-dir", "-I",
-        help="Directory containing inventory files (YAML and/or INI). "
+        help="Working directory. The inventory is loaded from PATH/inventory/. "
              "Enables the staging workflow (pending / commit).",
         envvar="BBUI_INVENTORY_DIR",
     ),
@@ -82,13 +82,13 @@ def _resolve_inventory(
     """Return (inv_file, inv_dir) using CLI/env/workdir priority.
 
     Priority:
-    1. --inventory-dir / BBUI_INVENTORY_DIR
-    2. --inventory / BBUI_INVENTORY
-    3. cwd/inventory/ workdir auto-discovery
+    1. --inventory-dir / BBUI_INVENTORY_DIR  → inventory at <workdir>/inventory/
+    2. --inventory / BBUI_INVENTORY          → single file, used as-is
+    3. cwd/inventory/ workdir auto-discovery → inventory at <cwd>/inventory/
     Returns (None, None) when nothing is found.
     """
     if inventory_dir is not None:
-        return None, inventory_dir
+        return None, inventory_dir / INVENTORY_SUBDIR
     if inventory is not None:
         return inventory, None
     candidate = Path.cwd() / INVENTORY_SUBDIR
