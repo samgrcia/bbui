@@ -296,12 +296,22 @@ def load_inventory_or_cache(inventory_dir: Path) -> Inventory:
 
     # 1. Staging cache takes absolute priority
     if has_pending(inventory_dir):
-        return load_cache(inventory_dir).inventory
+        staging_inv = load_cache(inventory_dir).inventory
+        if BbInventory.is_bb_layout(inventory_dir) and not isinstance(staging_inv, BbInventory):
+            # Stale staging cache created before BbInventory migration — discard it.
+            discard(inventory_dir)
+        else:
+            return staging_inv
 
     # 2. Read cache (fingerprint-validated)
     cached = _load_inv_cache(inventory_dir)
     if cached is not None:
-        return cached
+        # Discard stale cache when the layout is BB but the cached type is not.
+        # This happens after a migration from plain Inventory to BbInventory.
+        if BbInventory.is_bb_layout(inventory_dir) and not isinstance(cached, BbInventory):
+            _invalidate_inv_cache(inventory_dir)
+        else:
+            return cached
 
     # 3. Full parse + persist read cache
     if BbInventory.is_bb_layout(inventory_dir):
