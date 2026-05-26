@@ -79,6 +79,9 @@ def _load_clean(inventory: Path, inventory_dir: Optional[Path]) -> Inventory:
     """Load directly from disk (ignores cache). Used for read-only commands."""
     try:
         if inventory_dir is not None:
+            from bbui.backend.bbinventory import BbInventory
+            if BbInventory.is_bb_layout(inventory_dir):
+                return BbInventory.load(inventory_dir)
             return load_inventory_dir(inventory_dir)
         return load_inventory(inventory)
     except FileNotFoundError as exc:
@@ -255,8 +258,14 @@ def host_add(
                 detail=f"groups={group_list}" if group_list else "",
             ))
             added.append(hostname)
-        except ValueError:
-            skipped.append(hostname)
+        except ValueError as exc:
+            msg = str(exc)
+            if "already exists" in msg:
+                skipped.append(hostname)
+            else:
+                # Group validation error (e.g. missing fn_/hw_/os_ group)
+                rprint(f"[red]Error:[/red] {exc}")
+                raise typer.Exit(1)
 
     if skipped:
         rprint(f"[yellow]Skipped (already exist):[/yellow] {', '.join(skipped)}")
