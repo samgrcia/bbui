@@ -400,7 +400,7 @@ def host_show(
              "Shows only that variable's value for each host in a compact table."
     )] = None,
     show_files: Annotated[bool, typer.Option(
-        "-f", "--files",
+        "-v", "--files",
         help="Show the source file for each variable. "
              "If the same variable is defined in multiple files, all are shown.",
     )] = False,
