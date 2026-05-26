@@ -44,7 +44,24 @@ from typing import Any
 import yaml
 
 from bbui.backend.models import Group, Host, Inventory
+from bbui.backend.nodeset import fold_ansible
 from bbui.backend.parser import _expand_hostpattern, _load_group_vars  # type: ignore[attr-defined]
+
+# ---------------------------------------------------------------------------
+# YAML helpers
+# ---------------------------------------------------------------------------
+
+class _NullDumper(yaml.Dumper):
+    """Dumps None as an empty scalar instead of 'null'.
+
+    Produces ``hostname:`` (no trailing value) for hosts with no vars,
+    matching the standard Ansible YAML inventory format.
+    """
+
+_NullDumper.add_representer(
+    type(None),
+    lambda dumper, _: dumper.represent_scalar("tag:yaml.org,2002:null", ""),
+)
 
 # ---------------------------------------------------------------------------
 # Layout constants
@@ -229,7 +246,7 @@ class BbInventory(Inventory):
             data: dict[str, Any] = {"all": {"hosts": hosts_block}}
             filepath.parent.mkdir(parents=True, exist_ok=True)
             with filepath.open("w", encoding="utf-8") as fh:
-                yaml.dump(data, fh, default_flow_style=False, allow_unicode=True, sort_keys=True)
+                yaml.dump(data, fh, Dumper=_NullDumper, default_flow_style=False, allow_unicode=True, sort_keys=True)
             written.append(filepath)
 
         return written
@@ -251,8 +268,8 @@ class BbInventory(Inventory):
             for group in sorted(groups, key=lambda g: g.name):
                 # [group]
                 lines.append(f"[{group.name}]")
-                for hostname in sorted(group.hosts):
-                    lines.append(hostname)
+                for pattern in fold_ansible(group.hosts):
+                    lines.append(pattern)
                 lines.append("")
                 # [group:vars]
                 if group.vars:

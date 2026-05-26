@@ -399,9 +399,26 @@ class TestBbInventoryLoad:
 
         storage_text = custom.read_text()
         assert "[storage]" in storage_text
-        assert "c001" in storage_text
-        assert "c002" in storage_text
+        # c001 and c002 are folded into a single Ansible range pattern
+        assert "c[001:002]" in storage_text
         assert not (root / "cluster" / "groups" / "others").exists()
+
+    def test_load_roundtrip_folded_ini(self, tmp_path: Path) -> None:
+        """Hosts folded in INI files are expanded back correctly on load."""
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        for i in range(1, 6):
+            inv.add_host(f"c{i:03d}", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.write(root)
+
+        # Verify the group file contains folded pattern, not individual lines
+        fn_text = (root / "cluster" / "groups" / "fn").read_text()
+        assert "c[001:005]" in fn_text
+        assert "c001\n" not in fn_text  # individual lines should not appear
+
+        # Verify load back gives all five hosts
+        inv2 = BbInventory.load(root)
+        assert {h.name for h in inv2.list_hosts()} == {f"c{i:03d}" for i in range(1, 6)}
 
     def test_new_host_written_to_existing_source_file(self, tmp_path: Path) -> None:
         """A new host goes into the same nodes file as its fn_* peers, not a new file."""
@@ -424,3 +441,45 @@ class TestBbInventoryLoad:
         content = yaml.safe_load(shared.read_text())
         assert "c001" in content["all"]["hosts"]
         assert "c002" in content["all"]["hosts"]
+
+
+# ---------------------------------------------------------------------------
+# fold_ansible tests
+# ---------------------------------------------------------------------------
+
+from bbui.backend.nodeset import fold_ansible
+
+
+class TestFoldAnsible:
+    def test_contiguous_range(self) -> None:
+        assert fold_ansible(["web01", "web02", "web03"]) == ["web[01:03]"]
+
+    def test_single_host(self) -> None:
+        assert fold_ansible(["web01"]) == ["web01"]
+
+    def test_empty(self) -> None:
+        assert fold_ansible([]) == []
+
+    def test_non_mergeable_hosts(self) -> None:
+        result = fold_ansible(["web01", "db01"])
+        assert result == ["db01", "web01"]
+
+    def test_non_contiguous_same_prefix(self) -> None:
+        result = fold_ansible(["web01", "web03"])
+        assert result == ["web[01,03]"]
+
+    def test_large_zero_padded_range(self) -> None:
+        hosts = [f"c{i:03d}" for i in range(1, 11)]
+        assert fold_ansible(hosts) == ["c[001:010]"]
+
+    def test_mixed_groups_split_into_lines(self) -> None:
+        # db01 and web[01-03] must be separate lines, not db01,web[01:03]
+        result = fold_ansible(["web01", "web02", "web03", "db01"])
+        assert len(result) == 2
+        assert "db01" in result
+        assert "web[01:03]" in result
+
+    def test_colon_not_dash_in_range(self) -> None:
+        result = fold_ansible(["node01", "node02"])
+        assert result == ["node[01:02]"]
+        assert "-" not in result[0]
