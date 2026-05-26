@@ -6,6 +6,7 @@ import textwrap
 from pathlib import Path
 
 import pytest
+import yaml
 
 from bbui.backend.models import Group, Host, Inventory
 from bbui.backend.parser import dump_inventory, load_inventory
@@ -213,3 +214,191 @@ def test_load_inventory_dir_empty(tmp_path: Path) -> None:
     from bbui.backend.parser import load_inventory_dir
     with pytest.raises(FileNotFoundError, match="No inventory files"):
         load_inventory_dir(tmp_path)
+
+
+# ---------------------------------------------------------------------------
+# BbInventory tests
+# ---------------------------------------------------------------------------
+
+from bbui.backend.bbinventory import BbInventory
+
+
+def _make_bb_root(tmp_path: Path) -> Path:
+    """Return an empty directory for a BlueBanquise inventory root."""
+    return tmp_path
+
+
+class TestBbInventoryValidation:
+    def test_add_host_requires_fn_hw_os(self) -> None:
+        inv = BbInventory()
+        with pytest.raises(ValueError, match="fn_"):
+            inv.add_host("node01", groups=["hw_typeA", "os_ubuntu"])
+
+    def test_add_host_missing_hw(self) -> None:
+        inv = BbInventory()
+        with pytest.raises(ValueError, match="hw_"):
+            inv.add_host("node01", groups=["fn_compute", "os_ubuntu"])
+
+    def test_add_host_missing_os(self) -> None:
+        inv = BbInventory()
+        with pytest.raises(ValueError, match="os_"):
+            inv.add_host("node01", groups=["fn_compute", "hw_typeA"])
+
+    def test_add_host_two_fn_groups_raises(self) -> None:
+        inv = BbInventory()
+        with pytest.raises(ValueError, match="exactly one"):
+            inv.add_host("node01", groups=["fn_compute", "fn_visu", "hw_typeA", "os_ubuntu"])
+
+    def test_add_host_valid(self) -> None:
+        inv = BbInventory()
+        host = inv.add_host("node01", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        assert host.name == "node01"
+        assert "fn_compute" in host.groups
+
+    def test_no_groups_raises(self) -> None:
+        inv = BbInventory()
+        with pytest.raises(ValueError):
+            inv.add_host("node01")
+
+
+class TestBbInventoryDump:
+    def test_dump_creates_node_file(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("mgt1", groups=["fn_management", "hw_typeA", "os_ubuntu"], vars={"ip": "10.0.0.1"})
+        inv.write(root)
+
+        node_file = root / "cluster" / "nodes" / "management.yml"
+        assert node_file.exists()
+        content = yaml.safe_load(node_file.read_text())
+        assert "all" in content
+        assert "mgt1" in content["all"]["hosts"]
+        assert content["all"]["hosts"]["mgt1"]["ip"] == "10.0.0.1"
+
+    def test_dump_creates_group_files(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.write(root)
+
+        fn_file = root / "cluster" / "groups" / "fn"
+        hw_file = root / "cluster" / "groups" / "hw"
+        os_file = root / "cluster" / "groups" / "os"
+        assert fn_file.exists()
+        assert hw_file.exists()
+        assert os_file.exists()
+
+        fn_text = fn_file.read_text()
+        assert "[fn_compute]" in fn_text
+        assert "c001" in fn_text
+
+    def test_dump_multiple_fn_groups(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("mgt1",  groups=["fn_management", "hw_typeA", "os_ubuntu"])
+        inv.add_host("c001",  groups=["fn_compute",    "hw_typeA", "os_ubuntu"])
+        inv.write(root)
+
+        assert (root / "cluster" / "nodes" / "management.yml").exists()
+        assert (root / "cluster" / "nodes" / "compute.yml").exists()
+
+    def test_dump_other_groups_to_others_file(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.add_group("storage")
+        inv.get_group("storage").add_host("c001")
+        inv.write(root)
+
+        others_file = root / "cluster" / "groups" / "others"
+        assert others_file.exists()
+        assert "[storage]" in others_file.read_text()
+
+    def test_write_creates_directories(self, tmp_path: Path) -> None:
+        inv = BbInventory()
+        inv.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.write(tmp_path)
+        assert (tmp_path / "cluster" / "nodes").is_dir()
+        assert (tmp_path / "cluster" / "groups").is_dir()
+
+    def test_dump_group_vars(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.get_group("hw_typeA").vars["bios"] = "v2"
+        inv.write(root)
+
+        hw_text = (root / "cluster" / "groups" / "hw").read_text()
+        assert "[hw_typeA:vars]" in hw_text
+        assert "bios=v2" in hw_text
+
+    def test_dump_group_children(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.get_group("hw_typeA").add_child("hw_typeB")
+        inv._ensure_group("hw_typeB")
+        inv.write(root)
+
+        hw_text = (root / "cluster" / "groups" / "hw").read_text()
+        assert "[hw_typeA:children]" in hw_text
+        assert "hw_typeB" in hw_text
+
+
+class TestBbInventoryLoad:
+    def test_load_roundtrip(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("mgt1", groups=["fn_management", "hw_typeA", "os_ubuntu"], vars={"ip": "10.0.0.1"})
+        inv.add_host("c001", groups=["fn_compute",    "hw_typeA", "os_ubuntu"])
+        inv.write(root)
+
+        inv2 = BbInventory.load(root)
+        assert {h.name for h in inv2.list_hosts()} == {"mgt1", "c001"}
+        mgt1 = inv2.get_host("mgt1")
+        assert mgt1.vars.get("ip") == "10.0.0.1"
+        assert "fn_management" in mgt1.groups
+
+    def test_load_group_membership(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.write(root)
+
+        inv2 = BbInventory.load(root)
+        c001 = inv2.get_host("c001")
+        assert "fn_compute" in c001.groups
+        assert "hw_typeA"   in c001.groups
+        assert "os_ubuntu"  in c001.groups
+
+    def test_load_records_group_source_files(self, tmp_path: Path) -> None:
+        root = _make_bb_root(tmp_path)
+        inv = BbInventory()
+        inv.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.add_group("storage")
+        inv.write(root)
+
+        inv2 = BbInventory.load(root)
+        # Only non-base groups are tracked; base groups always go to canonical files.
+        assert "storage" in inv2._group_source
+        assert "fn_compute" not in inv2._group_source
+
+    def test_load_other_groups_written_back_to_source(self, tmp_path: Path) -> None:
+        """Groups loaded from a custom file are written back to that file."""
+        root = _make_bb_root(tmp_path)
+        inv0 = BbInventory()
+        inv0.add_host("c001", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv0.write(root)
+        custom = root / "cluster" / "groups" / "storage"
+        custom.write_text("[storage]\nc001\n")
+
+        inv = BbInventory.load(root)
+        inv.add_host("c002", groups=["fn_compute", "hw_typeA", "os_ubuntu"])
+        inv.get_group("storage").add_host("c002")
+        inv.write(root)
+
+        storage_text = custom.read_text()
+        assert "[storage]" in storage_text
+        assert "c001" in storage_text
+        assert "c002" in storage_text
+        assert not (root / "cluster" / "groups" / "others").exists()

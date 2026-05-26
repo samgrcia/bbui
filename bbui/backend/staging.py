@@ -158,7 +158,6 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
     Files are processed in the same alphabetical order as ``load_inventory_dir``
     so that last-writer-wins matches the merge behaviour.
     """
-    from bbui.backend.bb_inventory import BbInventory
     from bbui.backend.parser import (
         YAML_SUFFIXES, INI_SUFFIXES, GROUP_VARS_DIR,
         _load_yaml_file, _load_ini_file, _detect_format,
@@ -188,8 +187,7 @@ def _build_source_map(inventory_dir: Path) -> SourceMap:
         if suffix not in YAML_SUFFIXES and suffix not in INI_SUFFIXES and suffix != "":
             continue
 
-        tmp = BbInventory()
-        tmp._loading = True
+        tmp = Inventory()
         try:
             fmt = _detect_format(filepath)
             if fmt == "yaml":
@@ -294,7 +292,7 @@ def load_inventory_or_cache(inventory_dir: Path) -> Inventory:
     3. Full parse — rebuilds the read cache.  Uses :class:`BbInventory` when the
        directory follows the BlucBanquise layout (contains ``nodes/`` or ``groups/``).
     """
-    from bbui.backend.bb_inventory import BbInventory, is_bb_layout
+    from bbui.backend.bbinventory import BbInventory
 
     # 1. Staging cache takes absolute priority
     if has_pending(inventory_dir):
@@ -306,7 +304,7 @@ def load_inventory_or_cache(inventory_dir: Path) -> Inventory:
         return cached
 
     # 3. Full parse + persist read cache
-    if is_bb_layout(inventory_dir):
+    if BbInventory.is_bb_layout(inventory_dir):
         inventory: Inventory = BbInventory.load(inventory_dir)
     else:
         inventory = load_inventory_dir(inventory_dir)
@@ -369,16 +367,14 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
 
     Returns a mapping  {file_path: nb_of_changes_applied}.
     """
-    from bbui.backend.bb_inventory import BbInventory
+    from bbui.backend.bbinventory import BbInventory
 
     staging_area = load_cache(inventory_dir)
 
     # ── BlucBanquise fast path ──────────────────────────────────────────────
     if isinstance(staging_area.inventory, BbInventory):
         bb_inv = staging_area.inventory
-        if bb_inv.root_dir is None:
-            bb_inv.root_dir = inventory_dir
-        written = bb_inv.dump()
+        written = bb_inv.write(inventory_dir)
         discard(inventory_dir)
         fresh: Inventory = BbInventory.load(inventory_dir)
         _save_inv_cache(fresh, inventory_dir)
