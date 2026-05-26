@@ -456,11 +456,17 @@ def host_show(
     else:
         # ── Full display mode: one block per host ─────────────────────────
         vsmap = None
+        workdir = inv_dir.parent if inv_dir is not None else None
         if show_files and inv_dir is not None:
             try:
                 vsmap = build_var_source_map(inv_dir)
             except Exception:
                 pass
+
+        def _rel(paths: list[Path]) -> list[Path]:
+            if workdir is None:
+                return paths
+            return [p.relative_to(workdir) if p.is_relative_to(workdir) else p for p in paths]
 
         for i, host in enumerate(hosts):
             if i > 0:
@@ -473,7 +479,7 @@ def host_show(
 
             for dotted_key, str_value in flatten_vars(host.vars):
                 top = _top_level_key(dotted_key)
-                files = vsmap.file_for_host_var(host.name, top) if vsmap else []
+                files = _rel(vsmap.file_for_host_var(host.name, top)) if vsmap else []
                 rows.append((dotted_key, "hostvar", str_value, files))
 
             for group_name in sorted(host.groups):
@@ -486,7 +492,7 @@ def host_show(
                 label = f"groupvar ({group_name})"
                 for dotted_key, str_value in flatten_vars(group.vars):
                     top = _top_level_key(dotted_key)
-                    files = vsmap.file_for_group_var(group_name, top) if vsmap else []
+                    files = _rel(vsmap.file_for_group_var(group_name, top)) if vsmap else []
                     rows.append((dotted_key, label, str_value, files))
 
             if rows:
