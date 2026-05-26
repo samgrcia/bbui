@@ -36,19 +36,22 @@ from bbui.backend.models import Inventory
 class VarSourceMap:
     """Tracks which files defined each top-level variable key per owner.
 
-    Structure:
-        host_vars[hostname][var_key]    -> list[Path]  (all contributing files, in load order)
-        group_vars[group_name][var_key] -> list[Path]
-    """
-    host_vars:  dict[str, dict[str, list[Path]]] = field(default_factory=dict)
-    group_vars: dict[str, dict[str, list[Path]]] = field(default_factory=dict)
+    Each entry is a (Path, value) pair: the file and the top-level value it
+    contributed, in load order (last entry wins after merging).
 
-    def file_for_host_var(self, hostname: str, var_key: str) -> list[Path]:
-        """Return all files that defined *var_key* on *hostname* (in load order)."""
+    Structure:
+        host_vars[hostname][var_key]    -> list[tuple[Path, Any]]
+        group_vars[group_name][var_key] -> list[tuple[Path, Any]]
+    """
+    host_vars:  dict[str, dict[str, list[tuple[Path, Any]]]] = field(default_factory=dict)
+    group_vars: dict[str, dict[str, list[tuple[Path, Any]]]] = field(default_factory=dict)
+
+    def file_for_host_var(self, hostname: str, var_key: str) -> list[tuple[Path, Any]]:
+        """Return all (file, value) pairs for *var_key* on *hostname* (load order)."""
         return self.host_vars.get(hostname, {}).get(var_key, [])
 
-    def file_for_group_var(self, group_name: str, var_key: str) -> list[Path]:
-        """Return all files that defined *var_key* on *group_name* (in load order)."""
+    def file_for_group_var(self, group_name: str, var_key: str) -> list[tuple[Path, Any]]:
+        """Return all (file, value) pairs for *var_key* on *group_name* (load order)."""
         return self.group_vars.get(group_name, {}).get(var_key, [])
 
 
@@ -72,13 +75,13 @@ def build_var_source_map(inventory_dir: Path) -> VarSourceMap:
 
     def _record_host_vars(hostname: str, vars_dict: dict[str, Any], filepath: Path) -> None:
         target = vsmap.host_vars.setdefault(hostname, {})
-        for key in vars_dict:
-            target.setdefault(key, []).append(filepath)
+        for key, value in vars_dict.items():
+            target.setdefault(key, []).append((filepath, value))
 
     def _record_group_vars(group_name: str, vars_dict: dict[str, Any], filepath: Path) -> None:
         target = vsmap.group_vars.setdefault(group_name, {})
-        for key in vars_dict:
-            target.setdefault(key, []).append(filepath)
+        for key, value in vars_dict.items():
+            target.setdefault(key, []).append((filepath, value))
 
     # ── Step 1: inventory files (non group_vars) ─────────────────────────
     for filepath in sorted(inventory_dir.rglob("*")):
@@ -212,7 +215,7 @@ def lookup_var(
         if found:
             files: list[Path] = []
             if var_source_map is not None:
-                files = var_source_map.file_for_host_var(host.name, top_key)
+                files = [p for p, _ in var_source_map.file_for_host_var(host.name, top_key)]
             results.append(VarMatch(
                 owner_kind="host",
                 owner_name=host.name,
@@ -226,7 +229,7 @@ def lookup_var(
         if found:
             files = []
             if var_source_map is not None:
-                files = var_source_map.file_for_group_var(group.name, top_key)
+                files = [p for p, _ in var_source_map.file_for_group_var(group.name, top_key)]
             results.append(VarMatch(
                 owner_kind="group",
                 owner_name=group.name,

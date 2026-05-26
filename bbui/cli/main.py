@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Annotated, NoReturn, Optional
+from typing import Annotated, Any, NoReturn, Optional
 
 import typer
 from rich import print as rprint
@@ -463,10 +463,30 @@ def host_show(
             except Exception:
                 pass
 
-        def _rel(paths: list[Path]) -> list[Path]:
+        def _rel_one(path: Path) -> Path:
             if workdir is None:
-                return paths
-            return [p.relative_to(workdir) if p.is_relative_to(workdir) else p for p in paths]
+                return path
+            return path.relative_to(workdir) if path.is_relative_to(workdir) else path
+
+        def _file_rows(
+            dotted_key: str,
+            fallback_val: str,
+            type_label: str,
+            entries: list[tuple[Path, Any]],
+            top_key: str,
+        ) -> list[tuple[str, str, str, list[Path]]]:
+            """One row per source file, each with its own value when there are multiple."""
+            if not entries:
+                return [(dotted_key, type_label, fallback_val, [])]
+            if len(entries) == 1:
+                return [(dotted_key, type_label, fallback_val, [_rel_one(entries[0][0])])]
+            # Multiple sources: resolve the specific dotted value from each file's top-level value
+            result = []
+            for path, top_val in entries:
+                found, val = _resolve_dotpath({top_key: top_val}, dotted_key)
+                v = _format_value(val) if found else "[dim]—[/dim]"
+                result.append((dotted_key, type_label, v, [_rel_one(path)]))
+            return result
 
         for i, host in enumerate(hosts):
             if i > 0:
@@ -479,8 +499,8 @@ def host_show(
 
             for dotted_key, str_value in flatten_vars(host.vars):
                 top = _top_level_key(dotted_key)
-                files = _rel(vsmap.file_for_host_var(host.name, top)) if vsmap else []
-                rows.append((dotted_key, "hostvar", str_value, files))
+                entries = vsmap.file_for_host_var(host.name, top) if vsmap else []
+                rows.extend(_file_rows(dotted_key, str_value, "hostvar", entries, top))
 
             for group_name in sorted(host.groups):
                 try:
@@ -492,8 +512,8 @@ def host_show(
                 label = f"groupvar ({group_name})"
                 for dotted_key, str_value in flatten_vars(group.vars):
                     top = _top_level_key(dotted_key)
-                    files = _rel(vsmap.file_for_group_var(group_name, top)) if vsmap else []
-                    rows.append((dotted_key, label, str_value, files))
+                    entries = vsmap.file_for_group_var(group_name, top) if vsmap else []
+                    rows.extend(_file_rows(dotted_key, str_value, label, entries, top))
 
             if rows:
                 rprint(host_vars_table(rows, show_files=show_files))
