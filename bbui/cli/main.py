@@ -12,8 +12,10 @@ from rich.table import Table
 from rich.text import Text
 
 from bbui.backend.models import Inventory
-from bbui.backend.vars_lookup import build_var_source_map, lookup_var, _resolve_dotpath
-from bbui.cli.vars_display import vars_table
+from bbui.backend.vars_lookup import (
+    build_var_source_map, lookup_var, _resolve_dotpath, _top_level_key,
+)
+from bbui.cli.vars_display import flatten_vars, host_vars_table, vars_table
 from bbui.backend.nodeset import expand_nodeset, fold_nodeset
 from bbui.backend.parser import load_inventory, load_inventory_dir
 from bbui.backend.staging import (
@@ -397,10 +399,18 @@ def host_show(
         help="Variable to display (dot-notation: bmc.ip4, disks[0].name). "
              "Shows only that variable's value for each host in a compact table."
     )] = None,
+    show_files: Annotated[bool, typer.Option(
+        "-v", "--verbose",
+        help="Show the source file for each variable. "
+             "If the same variable is defined in multiple files, all are shown.",
+    )] = False,
     inventory: InventoryOption = None,
     inventory_dir: InventoryDirOption = None,
 ) -> None:
     """Show details and variables of one or more hosts (NodeSet syntax supported).
+
+    Displays both host variables and variables inherited from each group.
+    Use -f to see which file each variable comes from.
 
     With a second argument, restricts output to a single variable across all matched hosts.
     """
@@ -445,13 +455,48 @@ def host_show(
         rprint(table)
     else:
         # ── Full display mode: one block per host ─────────────────────────
+        vsmap = None
+        workdir = inv_dir.parent if inv_dir is not None else None
+        if show_files and inv_dir is not None:
+            try:
+                vsmap = build_var_source_map(inv_dir)
+            except Exception:
+                pass
+
+        def _rel(paths: list[Path]) -> list[Path]:
+            if workdir is None:
+                return paths
+            return [p.relative_to(workdir) if p.is_relative_to(workdir) else p for p in paths]
+
         for i, host in enumerate(hosts):
             if i > 0:
                 rprint("")
             rprint(f"[bold cyan]{host.name}[/bold cyan]")
             rprint(f"  [dim]groups:[/dim] {', '.join(host.groups) if host.groups else 'none'}")
-            if host.vars:
-                rprint(vars_table(host.vars))
+
+            # Collect all variable rows: (dotted_key, type_label, str_value, files)
+            rows: list[tuple[str, str, str, list[Path]]] = []
+
+            for dotted_key, str_value in flatten_vars(host.vars):
+                top = _top_level_key(dotted_key)
+                files = _rel(vsmap.file_for_host_var(host.name, top)) if vsmap else []
+                rows.append((dotted_key, "hostvar", str_value, files))
+
+            for group_name in sorted(host.groups):
+                try:
+                    group = inv.get_group(group_name)
+                except KeyError:
+                    continue
+                if not group.vars:
+                    continue
+                label = f"groupvar ({group_name})"
+                for dotted_key, str_value in flatten_vars(group.vars):
+                    top = _top_level_key(dotted_key)
+                    files = _rel(vsmap.file_for_group_var(group_name, top)) if vsmap else []
+                    rows.append((dotted_key, label, str_value, files))
+
+            if rows:
+                rprint(host_vars_table(rows, show_files=show_files))
             else:
                 rprint("  [dim]vars:   none[/dim]")
 
@@ -641,7 +686,7 @@ def vars_show(
     for m in matches:
         kind_str  = "host" if m.owner_kind == "host" else "group"
         value_str = _format_value(m.value)
-        file_str  = str(m.source_file) if m.source_file else "[dim]unknown[/dim]"
+        file_str  = "\n".join(str(p) for p in m.source_file) if m.source_file else "[dim]unknown[/dim]"
         table.add_row(kind_str, m.owner_name, value_str, file_str)
 
     rprint(table)

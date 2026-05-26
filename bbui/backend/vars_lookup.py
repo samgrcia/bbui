@@ -34,22 +34,22 @@ from bbui.backend.models import Inventory
 
 @dataclass
 class VarSourceMap:
-    """Tracks which file defined each top-level variable key per owner.
+    """Tracks which files defined each top-level variable key per owner.
 
     Structure:
-        host_vars[hostname][var_key]   -> Path
-        group_vars[group_name][var_key] -> Path
+        host_vars[hostname][var_key]    -> list[Path]  (all contributing files, in load order)
+        group_vars[group_name][var_key] -> list[Path]
     """
-    host_vars:  dict[str, dict[str, Path]] = field(default_factory=dict)
-    group_vars: dict[str, dict[str, Path]] = field(default_factory=dict)
+    host_vars:  dict[str, dict[str, list[Path]]] = field(default_factory=dict)
+    group_vars: dict[str, dict[str, list[Path]]] = field(default_factory=dict)
 
-    def file_for_host_var(self, hostname: str, var_key: str) -> Path | None:
-        """Return the file that defined *var_key* on *hostname*, or None."""
-        return self.host_vars.get(hostname, {}).get(var_key)
+    def file_for_host_var(self, hostname: str, var_key: str) -> list[Path]:
+        """Return all files that defined *var_key* on *hostname* (in load order)."""
+        return self.host_vars.get(hostname, {}).get(var_key, [])
 
-    def file_for_group_var(self, group_name: str, var_key: str) -> Path | None:
-        """Return the file that defined *var_key* on *group_name*, or None."""
-        return self.group_vars.get(group_name, {}).get(var_key)
+    def file_for_group_var(self, group_name: str, var_key: str) -> list[Path]:
+        """Return all files that defined *var_key* on *group_name* (in load order)."""
+        return self.group_vars.get(group_name, {}).get(var_key, [])
 
 
 def build_var_source_map(inventory_dir: Path) -> VarSourceMap:
@@ -73,12 +73,12 @@ def build_var_source_map(inventory_dir: Path) -> VarSourceMap:
     def _record_host_vars(hostname: str, vars_dict: dict[str, Any], filepath: Path) -> None:
         target = vsmap.host_vars.setdefault(hostname, {})
         for key in vars_dict:
-            target[key] = filepath
+            target.setdefault(key, []).append(filepath)
 
     def _record_group_vars(group_name: str, vars_dict: dict[str, Any], filepath: Path) -> None:
         target = vsmap.group_vars.setdefault(group_name, {})
         for key in vars_dict:
-            target[key] = filepath
+            target.setdefault(key, []).append(filepath)
 
     # ── Step 1: inventory files (non group_vars) ─────────────────────────
     for filepath in sorted(inventory_dir.rglob("*")):
@@ -184,10 +184,10 @@ def _top_level_key(dotpath: str) -> str:
 @dataclass
 class VarMatch:
     """A single occurrence of a variable on a host or group."""
-    owner_kind:  str           # "host" or "group"
-    owner_name:  str           # hostname or group name
-    value:       Any           # resolved value (may be nested)
-    source_file: Path | None   # file that defined the top-level var key
+    owner_kind:  str         # "host" or "group"
+    owner_name:  str         # hostname or group name
+    value:       Any         # resolved value (may be nested)
+    source_file: list[Path]  # all files that defined the top-level var key (load order)
 
 
 def lookup_var(
@@ -210,28 +210,28 @@ def lookup_var(
     for host in sorted(inventory.list_hosts(), key=lambda h: h.name):
         found, value = _resolve_dotpath(host.vars, varname)
         if found:
-            source: Path | None = None
+            files: list[Path] = []
             if var_source_map is not None:
-                source = var_source_map.file_for_host_var(host.name, top_key)
+                files = var_source_map.file_for_host_var(host.name, top_key)
             results.append(VarMatch(
                 owner_kind="host",
                 owner_name=host.name,
                 value=value,
-                source_file=source,
+                source_file=files,
             ))
 
     # ── Groups ───────────────────────────────────────────────────────────
     for group in sorted(inventory.list_groups(), key=lambda g: g.name):
         found, value = _resolve_dotpath(group.vars, varname)
         if found:
-            source = None
+            files = []
             if var_source_map is not None:
-                source = var_source_map.file_for_group_var(group.name, top_key)
+                files = var_source_map.file_for_group_var(group.name, top_key)
             results.append(VarMatch(
                 owner_kind="group",
                 owner_name=group.name,
                 value=value,
-                source_file=source,
+                source_file=files,
             ))
 
     return results
