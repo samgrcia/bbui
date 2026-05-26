@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="fr" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Gestionnaire d'inventaires Ansible en ligne de commande">
+        <meta name="description" content="Command-line Ansible inventory manager">
       
       
       
@@ -27,7 +27,7 @@
     
     
       
-        <title>Formats d'inventaire - bbui</title>
+        <title>Inventory layouts - bbui</title>
       
     
     
@@ -78,8 +78,8 @@
     <div data-md-component="skip">
       
         
-        <a href="#formats-dinventaire" class="md-skip">
-          Aller au contenu
+        <a href="#inventory-layouts" class="md-skip">
+          Skip to content
         </a>
       
     </div>
@@ -93,7 +93,7 @@
   
 
 <header class="md-header md-header--shadow" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="En-tête">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="bbui" class="md-header__button md-logo" aria-label="bbui" data-md-component="logo">
       
   
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Formats d'inventaire
+              Inventory layouts
             
           </span>
         </div>
@@ -127,9 +127,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Mode sombre" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -137,9 +137,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Mode clair" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -162,16 +162,16 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Rechercher" placeholder="Rechercher" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
       </label>
-      <nav class="md-search__options" aria-label="Recherche">
+      <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" title="Effacer" aria-label="Effacer" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
@@ -182,7 +182,7 @@
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Initialisation de la recherche
+            Initializing search
           </div>
           <ol class="md-search-result__list" role="presentation"></ol>
         </div>
@@ -194,7 +194,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/samgrcia/bbui" title="Aller au dépôt" class="md-source" data-md-component="source">
+        <a href="https://github.com/samgrcia/bbui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -240,7 +240,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/samgrcia/bbui" title="Aller au dépôt" class="md-source" data-md-component="source">
+      <a href="https://github.com/samgrcia/bbui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -267,7 +267,7 @@
   <span class="md-ellipsis">
     
   
-    Accueil
+    Home
   
 
     
@@ -330,7 +330,7 @@
   <span class="md-ellipsis">
     
   
-    Formats d'inventaire
+    Inventory layouts
   
 
     
@@ -348,7 +348,7 @@
   <span class="md-ellipsis">
     
   
-    Formats d'inventaire
+    Inventory layouts
   
 
     
@@ -360,7 +360,7 @@
       
         
 
-<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
@@ -369,27 +369,27 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table des matières
+      Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#layout-generique" class="md-nav__link">
+  <a href="#generic-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Layout générique
+        Generic layout
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Layout générique">
+    <nav class="md-nav" aria-label="Generic layout">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#format-yaml" class="md-nav__link">
+  <a href="#yaml-format" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Format YAML
+        YAML format
       
     </span>
   </a>
@@ -397,10 +397,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#format-ini" class="md-nav__link">
+  <a href="#ini-format" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Format INI
+        INI format
       
     </span>
   </a>
@@ -413,22 +413,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#layout-bluebanquise" class="md-nav__link">
+  <a href="#bluebanquise-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Layout BlueBanquise
+        BlueBanquise layout
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Layout BlueBanquise">
+    <nav class="md-nav" aria-label="BlueBanquise layout">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#groupes-obligatoires" class="md-nav__link">
+  <a href="#mandatory-group-membership" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Groupes obligatoires
+        Mandatory group membership
       
     </span>
   </a>
@@ -436,22 +436,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#routage-des-fichiers" class="md-nav__link">
+  <a href="#file-routing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Routage des fichiers
+        File routing
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Routage des fichiers">
+    <nav class="md-nav" aria-label="File routing">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fichiers-de-nuds-clusternodes" class="md-nav__link">
+  <a href="#node-files-clusternodes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fichiers de nœuds (cluster/nodes/)
+        Node files (cluster/nodes/)
       
     </span>
   </a>
@@ -459,10 +459,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fichiers-de-groupes-clustergroups" class="md-nav__link">
+  <a href="#group-files-clustergroups" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fichiers de groupes (cluster/groups/)
+        Group files (cluster/groups/)
       
     </span>
   </a>
@@ -512,7 +512,7 @@
   <span class="md-ellipsis">
     
   
-    Syntaxe NodeSet
+    NodeSet syntax
   
 
     
@@ -539,7 +539,7 @@
   <span class="md-ellipsis">
     
   
-    Workflow de staging
+    Staging workflow
   
 
     
@@ -566,7 +566,7 @@
   <span class="md-ellipsis">
     
   
-    Référence CLI
+    CLI reference
   
 
     
@@ -592,7 +592,7 @@
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
@@ -601,27 +601,27 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table des matières
+      Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#layout-generique" class="md-nav__link">
+  <a href="#generic-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Layout générique
+        Generic layout
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Layout générique">
+    <nav class="md-nav" aria-label="Generic layout">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#format-yaml" class="md-nav__link">
+  <a href="#yaml-format" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Format YAML
+        YAML format
       
     </span>
   </a>
@@ -629,10 +629,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#format-ini" class="md-nav__link">
+  <a href="#ini-format" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Format INI
+        INI format
       
     </span>
   </a>
@@ -645,22 +645,22 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#layout-bluebanquise" class="md-nav__link">
+  <a href="#bluebanquise-layout" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Layout BlueBanquise
+        BlueBanquise layout
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Layout BlueBanquise">
+    <nav class="md-nav" aria-label="BlueBanquise layout">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#groupes-obligatoires" class="md-nav__link">
+  <a href="#mandatory-group-membership" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Groupes obligatoires
+        Mandatory group membership
       
     </span>
   </a>
@@ -668,22 +668,22 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#routage-des-fichiers" class="md-nav__link">
+  <a href="#file-routing" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Routage des fichiers
+        File routing
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Routage des fichiers">
+    <nav class="md-nav" aria-label="File routing">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#fichiers-de-nuds-clusternodes" class="md-nav__link">
+  <a href="#node-files-clusternodes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fichiers de nœuds (cluster/nodes/)
+        Node files (cluster/nodes/)
       
     </span>
   </a>
@@ -691,10 +691,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#fichiers-de-groupes-clustergroups" class="md-nav__link">
+  <a href="#group-files-clustergroups" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fichiers de groupes (cluster/groups/)
+        Group files (cluster/groups/)
       
     </span>
   </a>
@@ -742,25 +742,25 @@
   
 
 
-<h1 id="formats-dinventaire">Formats d'inventaire<a class="headerlink" href="#formats-dinventaire" title="Permanent link">&para;</a></h1>
-<p>bbui supporte deux layouts : un layout générique Ansible, et le layout structuré BlueBanquise.<br />
-La détection est automatique au lancement de toute commande.</p>
+<h1 id="inventory-layouts">Inventory layouts<a class="headerlink" href="#inventory-layouts" title="Permanent link">&para;</a></h1>
+<p>bbui supports two layouts: a generic Ansible layout and the structured BlueBanquise layout.<br />
+Detection is automatic on every command.</p>
 <hr />
-<h2 id="layout-generique">Layout générique<a class="headerlink" href="#layout-generique" title="Permanent link">&para;</a></h2>
-<p>Un répertoire contenant un mélange de fichiers YAML et INI.</p>
+<h2 id="generic-layout">Generic layout<a class="headerlink" href="#generic-layout" title="Permanent link">&para;</a></h2>
+<p>A directory containing any mix of YAML and INI files.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>inventory/
-<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── hosts.yml           # hôtes en YAML
-<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├── staging.ini         # hôtes en INI
+<a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>├── hosts.yml           # hosts in YAML
+<a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>├── staging.ini         # hosts in INI
 <a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>└── group_vars/
-<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    ├── all.yml         # vars appliquées à tous les groupes
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    ├── webservers.yml  # vars pour le groupe &quot;webservers&quot;
-<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    └── databases/      # vars pour &quot;databases&quot; (layout répertoire)
+<a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>    ├── all.yml         # vars applied to all groups
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>    ├── webservers.yml  # vars for group &quot;webservers&quot;
+<a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>    └── databases/      # vars for &quot;databases&quot; (directory layout)
 <a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>        ├── main.yml
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>        └── secrets.yml
 </code></pre></div>
-<p>Les fichiers sont chargés par ordre alphabétique. En cas de conflit, le dernier fichier l'emporte.<br />
-<code>group_vars/</code> est appliqué en dernier, comme dans Ansible.</p>
-<h3 id="format-yaml">Format YAML<a class="headerlink" href="#format-yaml" title="Permanent link">&para;</a></h3>
+<p>Files are loaded alphabetically; last-writer-wins on conflicts.<br />
+<code>group_vars/</code> is applied last, matching Ansible's own precedence rules.</p>
+<h3 id="yaml-format">YAML format<a class="headerlink" href="#yaml-format" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="nt">all</span><span class="p">:</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="w">  </span><span class="nt">children</span><span class="p">:</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="w">    </span><span class="nt">webservers</span><span class="p">:</span>
@@ -769,7 +769,7 @@ La détection est automatique au lancement de toute commande.</p>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="w">          </span><span class="nt">ansible_user</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">ubuntu</span>
 <a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="w">        </span><span class="nt">web02</span><span class="p">:</span>
 </code></pre></div>
-<h3 id="format-ini">Format INI<a class="headerlink" href="#format-ini" title="Permanent link">&para;</a></h3>
+<h3 id="ini-format">INI format<a class="headerlink" href="#ini-format" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="k">[webservers]</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="na">web01 ansible_user</span><span class="o">=</span><span class="s">ubuntu</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="na">web02</span>
@@ -780,67 +780,67 @@ La détection est automatique au lancement de toute commande.</p>
 <a id="__codelineno-2-8" name="__codelineno-2-8" href="#__codelineno-2-8"></a><span class="k">[production:children]</span>
 <a id="__codelineno-2-9" name="__codelineno-2-9" href="#__codelineno-2-9"></a><span class="na">webservers</span>
 </code></pre></div>
-<p>Les sections <code>:vars</code> et <code>:children</code> sont supportées.</p>
+<p><code>:vars</code> and <code>:children</code> sections are supported.</p>
 <hr />
-<h2 id="layout-bluebanquise">Layout BlueBanquise<a class="headerlink" href="#layout-bluebanquise" title="Permanent link">&para;</a></h2>
-<p>bbui détecte automatiquement le layout BlueBanquise dès que le répertoire passé à <code>-I</code> contient <code>cluster/nodes/</code> ou <code>cluster/groups/</code>.</p>
+<h2 id="bluebanquise-layout">BlueBanquise layout<a class="headerlink" href="#bluebanquise-layout" title="Permanent link">&para;</a></h2>
+<p>bbui automatically detects the BlueBanquise layout as soon as the directory passed to <code>-I</code> contains <code>cluster/nodes/</code> or <code>cluster/groups/</code>.</p>
 <blockquote>
-<p><strong>Important</strong> : passer <code>-I</code> au parent de <code>cluster/</code>, pas à <code>cluster/</code> lui-même.</p>
+<p><strong>Important</strong>: always point <code>-I</code> at the parent of <code>cluster/</code>, not at <code>cluster/</code> itself.</p>
 </blockquote>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>inventory-root/           ← passer ce chemin à -I
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>inventory-root/           ← pass this path to -I
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>├── cluster/
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>│   ├── nodes/
-<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>│   │   ├── compute.yml   # hôtes fn_compute + leurs vars
-<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>│   │   ├── login.yml     # hôtes fn_login + leurs vars
+<a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>│   │   ├── compute.yml   # fn_compute hosts + their vars
+<a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>│   │   ├── login.yml     # fn_login hosts + their vars
 <a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>│   │   └── management.yml
 <a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>│   └── groups/
-<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>│       ├── fn            # déclarations fn_* (INI, sans extension)
-<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>│       ├── hw            # déclarations hw_*
-<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>│       ├── os            # déclarations os_*
-<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>│       └── others        # groupes utilisateur (bucket par défaut)
+<a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>│       ├── fn            # fn_* group declarations (INI, no extension)
+<a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>│       ├── hw            # hw_* group declarations
+<a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>│       ├── os            # os_* group declarations
+<a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>│       └── others        # user-defined groups (default bucket)
 <a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>└── group_vars/
 <a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>    └── ...
 </code></pre></div>
-<h3 id="groupes-obligatoires">Groupes obligatoires<a class="headerlink" href="#groupes-obligatoires" title="Permanent link">&para;</a></h3>
-<p>Chaque hôte doit appartenir à <strong>exactement un</strong> groupe de chacun des trois préfixes :</p>
+<h3 id="mandatory-group-membership">Mandatory group membership<a class="headerlink" href="#mandatory-group-membership" title="Permanent link">&para;</a></h3>
+<p>Every host <strong>must</strong> belong to exactly one group from each of the three base prefixes:</p>
 <table>
 <thead>
 <tr>
-<th>Préfixe</th>
-<th>Rôle</th>
-<th>Exemples</th>
+<th>Prefix</th>
+<th>Purpose</th>
+<th>Examples</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>fn_</code></td>
-<td>Fonction (rôle fonctionnel)</td>
+<td>Function (functional role)</td>
 <td><code>fn_compute</code>, <code>fn_management</code>, <code>fn_login</code></td>
 </tr>
 <tr>
 <td><code>hw_</code></td>
-<td>Type matériel</td>
+<td>Hardware type</td>
 <td><code>hw_cpu_server_type_A</code>, <code>hw_gpu_type_B</code></td>
 </tr>
 <tr>
 <td><code>os_</code></td>
-<td>Système d'exploitation</td>
+<td>Operating system</td>
 <td><code>os_ubuntu_24</code>, <code>os_rhel_9</code></td>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Correct — les trois préfixes présents</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Correct — all three prefixes present</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;c[001:010]&#39;</span><span class="w"> </span>--groups<span class="w"> </span>fn_compute,hw_typeA,os_ubuntu<span class="w"> </span>-I<span class="w"> </span>./inventory-root/
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Erreur — groupe hw_* manquant</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Error — missing hw_* group</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span>c011<span class="w"> </span>--groups<span class="w"> </span>fn_compute,os_ubuntu<span class="w"> </span>-I<span class="w"> </span>./inventory-root/
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Erreur — deux groupes fn_*</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Error — two fn_* groups</span>
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span>c012<span class="w"> </span>--groups<span class="w"> </span>fn_compute,fn_login,hw_typeA,os_ubuntu<span class="w"> </span>-I<span class="w"> </span>./inventory-root/
 </code></pre></div>
-<h3 id="routage-des-fichiers">Routage des fichiers<a class="headerlink" href="#routage-des-fichiers" title="Permanent link">&para;</a></h3>
-<h4 id="fichiers-de-nuds-clusternodes">Fichiers de nœuds (<code>cluster/nodes/</code>)<a class="headerlink" href="#fichiers-de-nuds-clusternodes" title="Permanent link">&para;</a></h4>
-<p>Chaque fichier de nœuds est un YAML Ansible standard dont la clé racine est <code>all</code> :</p>
+<h3 id="file-routing">File routing<a class="headerlink" href="#file-routing" title="Permanent link">&para;</a></h3>
+<h4 id="node-files-clusternodes">Node files (<code>cluster/nodes/</code>)<a class="headerlink" href="#node-files-clusternodes" title="Permanent link">&para;</a></h4>
+<p>Each node file is a standard Ansible YAML file with <code>all</code> as the root key:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="nt">all</span><span class="p">:</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="w">  </span><span class="nt">hosts</span><span class="p">:</span>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="w">    </span><span class="nt">c001</span><span class="p">:</span>
@@ -848,13 +848,13 @@ La détection est automatique au lancement de toute commande.</p>
 <a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="w">    </span><span class="nt">c002</span><span class="p">:</span>
 </code></pre></div>
 <ul>
-<li>Les hôtes <strong>existants</strong> sont réécrits dans le fichier source d'où ils ont été chargés.</li>
-<li>Les <strong>nouveaux</strong> hôtes rejoignent le fichier de leurs pairs de même groupe <code>fn_*</code> (premier fichier par ordre alphabétique).</li>
-<li>Si aucun pair n'existe encore, un nouveau fichier <code>&lt;fn_suffix&gt;.yml</code> est créé.</li>
+<li><strong>Existing</strong> hosts are written back to the file they were loaded from.</li>
+<li><strong>New</strong> hosts are co-located with existing peers of the same <code>fn_*</code> group (alphabetically first peer file wins).</li>
+<li>If no peer exists yet, a new <code>&lt;fn_suffix&gt;.yml</code> file is created.</li>
 </ul>
-<h4 id="fichiers-de-groupes-clustergroups">Fichiers de groupes (<code>cluster/groups/</code>)<a class="headerlink" href="#fichiers-de-groupes-clustergroups" title="Permanent link">&para;</a></h4>
-<p>Les fichiers de groupes sont en format INI (sans extension).<br />
-Les hôtes y apparaissent sous forme de <strong>NodeSet Ansible</strong> (<code>node[01:10]</code>) plutôt qu'un par ligne.</p>
+<h4 id="group-files-clustergroups">Group files (<code>cluster/groups/</code>)<a class="headerlink" href="#group-files-clustergroups" title="Permanent link">&para;</a></h4>
+<p>Group files use INI format (no extension).<br />
+Hosts appear as <strong>Ansible NodeSet</strong> expressions (<code>node[01:10]</code>) rather than one per line.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="k">[fn_compute]</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="na">c[001</span><span class="o">:</span><span class="s">004]</span>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>
@@ -862,31 +862,31 @@ Les hôtes y apparaissent sous forme de <strong>NodeSet Ansible</strong> (<code>
 <a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="na">mgt[1</span><span class="o">:</span><span class="s">2]</span>
 </code></pre></div>
 <ul>
-<li>Les groupes <code>fn_*</code>, <code>hw_*</code>, <code>os_*</code> sont toujours écrits dans leurs fichiers canoniques (<code>fn</code>, <code>hw</code>, <code>os</code>).</li>
-<li>Les groupes utilisateur chargés depuis un fichier nommé y sont réécrits.</li>
-<li>Les groupes utilisateur créés ex nihilo vont dans <code>cluster/groups/others</code>.</li>
+<li><code>fn_*</code>, <code>hw_*</code>, and <code>os_*</code> groups are always written to their canonical files (<code>fn</code>, <code>hw</code>, <code>os</code>).</li>
+<li>User-defined groups loaded from a named file are written back to that same file.</li>
+<li>User-defined groups created from scratch go to <code>cluster/groups/others</code>.</li>
 </ul>
 <h3 id="cache">Cache<a class="headerlink" href="#cache" title="Permanent link">&para;</a></h3>
-<p>bbui maintient deux caches sous <code>&lt;inventory-root&gt;/.bbui/</code> :</p>
+<p>bbui maintains two caches under <code>&lt;inventory-root&gt;/.bbui/</code>:</p>
 <table>
 <thead>
 <tr>
-<th>Fichier</th>
-<th>Rôle</th>
+<th>File</th>
+<th>Purpose</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>inventory_cache.pkl</code></td>
-<td>Inventaire parsé (cache lecture). Invalidé si un fichier source est plus récent.</td>
+<td>Parsed inventory (read cache). Invalidated when any source file is newer.</td>
 </tr>
 <tr>
 <td><code>cache.pkl</code></td>
-<td>Mutations stagées. Présent uniquement entre <code>stage</code> et <code>commit</code> / <code>discard</code>.</td>
+<td>Staged mutations. Present only between <code>stage</code> and <code>commit</code> / <code>discard</code>.</td>
 </tr>
 </tbody>
 </table>
-<p>Les caches sont invalidés automatiquement lorsque le type de layout change (ex. après une migration vers le layout BlueBanquise).</p>
+<p>Caches are automatically invalidated when the layout type changes (e.g. after migrating to the BlueBanquise layout).</p>
 
 
 
@@ -936,7 +936,7 @@ Les hôtes y apparaissent sous forme de <strong>NodeSet Ansible</strong> (<code>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>

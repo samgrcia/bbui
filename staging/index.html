@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="fr" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Gestionnaire d'inventaires Ansible en ligne de commande">
+        <meta name="description" content="Command-line Ansible inventory manager">
       
       
       
@@ -27,7 +27,7 @@
     
     
       
-        <title>Workflow de staging - bbui</title>
+        <title>Staging workflow - bbui</title>
       
     
     
@@ -78,8 +78,8 @@
     <div data-md-component="skip">
       
         
-        <a href="#workflow-de-staging" class="md-skip">
-          Aller au contenu
+        <a href="#staging-workflow" class="md-skip">
+          Skip to content
         </a>
       
     </div>
@@ -93,7 +93,7 @@
   
 
 <header class="md-header md-header--shadow" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="En-tête">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="bbui" class="md-header__button md-logo" aria-label="bbui" data-md-component="logo">
       
   
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Workflow de staging
+              Staging workflow
             
           </span>
         </div>
@@ -127,9 +127,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Mode sombre" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -137,9 +137,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Mode clair" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -162,16 +162,16 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Rechercher" placeholder="Rechercher" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
       </label>
-      <nav class="md-search__options" aria-label="Recherche">
+      <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" title="Effacer" aria-label="Effacer" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
@@ -182,7 +182,7 @@
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Initialisation de la recherche
+            Initializing search
           </div>
           <ol class="md-search-result__list" role="presentation"></ol>
         </div>
@@ -194,7 +194,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/samgrcia/bbui" title="Aller au dépôt" class="md-source" data-md-component="source">
+        <a href="https://github.com/samgrcia/bbui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -240,7 +240,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/samgrcia/bbui" title="Aller au dépôt" class="md-source" data-md-component="source">
+      <a href="https://github.com/samgrcia/bbui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -267,7 +267,7 @@
   <span class="md-ellipsis">
     
   
-    Accueil
+    Home
   
 
     
@@ -321,7 +321,7 @@
   <span class="md-ellipsis">
     
   
-    Formats d'inventaire
+    Inventory layouts
   
 
     
@@ -348,7 +348,7 @@
   <span class="md-ellipsis">
     
   
-    Syntaxe NodeSet
+    NodeSet syntax
   
 
     
@@ -384,7 +384,7 @@
   <span class="md-ellipsis">
     
   
-    Workflow de staging
+    Staging workflow
   
 
     
@@ -402,7 +402,7 @@
   <span class="md-ellipsis">
     
   
-    Workflow de staging
+    Staging workflow
   
 
     
@@ -414,7 +414,7 @@
       
         
 
-<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
@@ -423,15 +423,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table des matières
+      Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#vue-densemble" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Vue d'ensemble
+        Overview
       
     </span>
   </a>
@@ -439,10 +439,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#les-deux-caches" class="md-nav__link">
+  <a href="#the-two-caches" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Les deux caches
+        The two caches
       
     </span>
   </a>
@@ -450,15 +450,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#commandes" class="md-nav__link">
+  <a href="#commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Commandes
+        Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Commandes">
+    <nav class="md-nav" aria-label="Commands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -500,10 +500,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#comportement-en-cas-de-changements-cumules" class="md-nav__link">
+  <a href="#accumulating-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Comportement en cas de changements cumulés
+        Accumulating changes
       
     </span>
   </a>
@@ -511,10 +511,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#coherence-des-lectures" class="md-nav__link">
+  <a href="#read-consistency" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cohérence des lectures
+        Read consistency
       
     </span>
   </a>
@@ -543,7 +543,7 @@
   <span class="md-ellipsis">
     
   
-    Référence CLI
+    CLI reference
   
 
     
@@ -569,7 +569,7 @@
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
@@ -578,15 +578,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table des matières
+      Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#vue-densemble" class="md-nav__link">
+  <a href="#overview" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Vue d'ensemble
+        Overview
       
     </span>
   </a>
@@ -594,10 +594,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#les-deux-caches" class="md-nav__link">
+  <a href="#the-two-caches" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Les deux caches
+        The two caches
       
     </span>
   </a>
@@ -605,15 +605,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#commandes" class="md-nav__link">
+  <a href="#commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Commandes
+        Commands
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Commandes">
+    <nav class="md-nav" aria-label="Commands">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -655,10 +655,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#comportement-en-cas-de-changements-cumules" class="md-nav__link">
+  <a href="#accumulating-changes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Comportement en cas de changements cumulés
+        Accumulating changes
       
     </span>
   </a>
@@ -666,10 +666,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#coherence-des-lectures" class="md-nav__link">
+  <a href="#read-consistency" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Cohérence des lectures
+        Read consistency
       
     </span>
   </a>
@@ -696,52 +696,52 @@
   
 
 
-<h1 id="workflow-de-staging">Workflow de staging<a class="headerlink" href="#workflow-de-staging" title="Permanent link">&para;</a></h1>
-<p>bbui utilise un système de staging inspiré de git : les modifications sont accumulées en mémoire et ne sont jamais écrites sur disque sans un <code>commit</code> explicite.</p>
-<p>Le staging est activé dès que vous utilisez <code>--inventory-dir</code> / <code>-I</code>.<br />
-Avec <code>--inventory</code> / <code>-i</code> (fichier unique), les modifications sont écrites immédiatement.</p>
+<h1 id="staging-workflow">Staging workflow<a class="headerlink" href="#staging-workflow" title="Permanent link">&para;</a></h1>
+<p>bbui uses a git-inspired staging system: changes accumulate in memory and are never written to disk without an explicit <code>commit</code>.</p>
+<p>Staging is enabled as soon as you use <code>--inventory-dir</code> / <code>-I</code>.<br />
+With <code>--inventory</code> / <code>-i</code> (single file), changes are written immediately.</p>
 <hr />
-<h2 id="vue-densemble">Vue d'ensemble<a class="headerlink" href="#vue-densemble" title="Permanent link">&para;</a></h2>
+<h2 id="overview">Overview<a class="headerlink" href="#overview" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>bbcli host add &#39;c[011:020]&#39; --groups fn_compute,hw_typeA,os_ubuntu -I ./inventory/
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>      │
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>      ▼
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  [staging cache]   ←  inventory_cache.pkl (lecture) + cache.pkl (mutations)
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>  [staging cache]   ←  inventory_cache.pkl (read) + cache.pkl (mutations)
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>      │
-<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>      ├──  bbcli pending   →  aperçu des changements et des fichiers cibles
+<a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a>      ├──  bbcli pending   →  preview changes and target files
 <a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a>      │
-<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>      ├──  bbcli commit    →  écriture sur disque, nettoyage du cache
+<a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>      ├──  bbcli commit    →  write to disk, clear cache
 <a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a>      │
-<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>      └──  bbcli discard   →  abandon des changements, nettoyage du cache
+<a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a>      └──  bbcli discard   →  drop changes, clear cache
 </code></pre></div>
 <hr />
-<h2 id="les-deux-caches">Les deux caches<a class="headerlink" href="#les-deux-caches" title="Permanent link">&para;</a></h2>
-<p>Les caches vivent sous <code>&lt;inventory-dir&gt;/.bbui/</code> :</p>
+<h2 id="the-two-caches">The two caches<a class="headerlink" href="#the-two-caches" title="Permanent link">&para;</a></h2>
+<p>Both caches live under <code>&lt;inventory-dir&gt;/.bbui/</code>:</p>
 <table>
 <thead>
 <tr>
-<th>Fichier</th>
-<th>Rôle</th>
-<th>Cycle de vie</th>
+<th>File</th>
+<th>Purpose</th>
+<th>Lifecycle</th>
 </tr>
 </thead>
 <tbody>
 <tr>
 <td><code>inventory_cache.pkl</code></td>
-<td>Inventaire parsé (accélère les lectures successives)</td>
-<td>Invalidé dès qu'un fichier source est plus récent</td>
+<td>Parsed inventory (speeds up successive reads)</td>
+<td>Invalidated when any source file is newer</td>
 </tr>
 <tr>
 <td><code>cache.pkl</code></td>
-<td>Mutations stagées (inventaire modifié + liste des changements)</td>
-<td>Créé par <code>stage</code>, supprimé par <code>commit</code> ou <code>discard</code></td>
+<td>Staged mutations (modified inventory + change list)</td>
+<td>Created by <code>stage</code>, deleted by <code>commit</code> or <code>discard</code></td>
 </tr>
 </tbody>
 </table>
-<p>Quand <code>cache.pkl</code> est présent, toutes les commandes de lecture (<code>host list</code>, <code>host show</code>, etc.) l'utilisent et affichent un avertissement indiquant que des changements non commités sont actifs.</p>
+<p>While <code>cache.pkl</code> is present, all read commands (<code>host list</code>, <code>host show</code>, etc.) use it and display a warning that uncommitted changes are active.</p>
 <hr />
-<h2 id="commandes">Commandes<a class="headerlink" href="#commandes" title="Permanent link">&para;</a></h2>
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link">&para;</a></h2>
 <h3 id="bbcli-pending"><code>bbcli pending</code><a class="headerlink" href="#bbcli-pending" title="Permanent link">&para;</a></h3>
-<p>Affiche les changements stagés et les fichiers qui seront écrits.</p>
+<p>Shows staged changes and the files that will be written.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>┌─ Pending changes ────────────────────────────────────┐
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>│   │ Type       │ Nodeset / Subject │ Detail           │
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>│ + │ host added │ c[011:020]        │ groups=[...]     │
@@ -756,32 +756,32 @@ Avec <code>--inventory</code> / <code>-i</code> (fichier unique), les modificati
 <a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>└────────────────────────────────────────────────────────┘
 </code></pre></div>
 <h3 id="bbcli-commit"><code>bbcli commit</code><a class="headerlink" href="#bbcli-commit" title="Permanent link">&para;</a></h3>
-<p>Écrit toutes les mutations sur disque et supprime <code>cache.pkl</code>.</p>
-<p>En layout BlueBanquise, chaque hôte est réécrit dans le fichier dont il provient.<br />
-Les nouveaux hôtes rejoignent le fichier de leurs pairs <code>fn_*</code> existants.</p>
+<p>Writes all mutations to disk and deletes <code>cache.pkl</code>.</p>
+<p>In BlueBanquise layout, each host is written back to the file it was loaded from.<br />
+New hosts are co-located with existing peers of the same <code>fn_*</code> group.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>bbcli<span class="w"> </span>commit<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="c1"># ✓ inventory/cluster/nodes/nodes.yml  (10 change(s))</span>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="c1"># ✓ inventory/cluster/groups/fn        (1 change(s))</span>
 <a id="__codelineno-2-4" name="__codelineno-2-4" href="#__codelineno-2-4"></a><span class="c1"># Commit complete.</span>
 </code></pre></div>
 <h3 id="bbcli-discard"><code>bbcli discard</code><a class="headerlink" href="#bbcli-discard" title="Permanent link">&para;</a></h3>
-<p>Abandonne toutes les mutations sans écrire sur disque.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bbcli<span class="w"> </span>discard<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w">          </span><span class="c1"># demande confirmation</span>
-<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>bbcli<span class="w"> </span>discard<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w"> </span>--force<span class="w">  </span><span class="c1"># sans confirmation</span>
+<p>Drops all staged mutations without writing to disk.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>bbcli<span class="w"> </span>discard<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w">          </span><span class="c1"># asks for confirmation</span>
+<a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>bbcli<span class="w"> </span>discard<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w"> </span>--force<span class="w">  </span><span class="c1"># no confirmation</span>
 </code></pre></div>
 <hr />
-<h2 id="comportement-en-cas-de-changements-cumules">Comportement en cas de changements cumulés<a class="headerlink" href="#comportement-en-cas-de-changements-cumules" title="Permanent link">&para;</a></h2>
-<p>Plusieurs commandes successives s'accumulent dans le même <code>cache.pkl</code> :</p>
+<h2 id="accumulating-changes">Accumulating changes<a class="headerlink" href="#accumulating-changes" title="Permanent link">&para;</a></h2>
+<p>Multiple successive commands accumulate in the same <code>cache.pkl</code>:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;c[011:015]&#39;</span><span class="w"> </span>--groups<span class="w"> </span>fn_compute,hw_typeA,os_ubuntu<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;mgt3&#39;</span><span class="w">       </span>--groups<span class="w"> </span>fn_management,hw_typeC,os_rhel<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>bbcli<span class="w"> </span>host<span class="w"> </span>remove<span class="w"> </span>c005<span class="w"> </span>-I<span class="w"> </span>./inventory/
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>bbcli<span class="w"> </span>pending<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w">   </span><span class="c1"># affiche les 3 changements ensemble</span>
-<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>bbcli<span class="w"> </span>commit<span class="w">  </span>-I<span class="w"> </span>./inventory/<span class="w">   </span><span class="c1"># écrit tout en une passe</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a>bbcli<span class="w"> </span>pending<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w">   </span><span class="c1"># shows all 3 changes together</span>
+<a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>bbcli<span class="w"> </span>commit<span class="w">  </span>-I<span class="w"> </span>./inventory/<span class="w">   </span><span class="c1"># writes everything in one pass</span>
 </code></pre></div>
 <hr />
-<h2 id="coherence-des-lectures">Cohérence des lectures<a class="headerlink" href="#coherence-des-lectures" title="Permanent link">&para;</a></h2>
-<p>Tant que <code>cache.pkl</code> est présent, les commandes de lecture (<code>host list</code>, <code>host show</code>, <code>vars show</code>) retournent l'état <strong>stagé</strong> et non l'état disque.<br />
-Un bandeau d'avertissement le signale :</p>
+<h2 id="read-consistency">Read consistency<a class="headerlink" href="#read-consistency" title="Permanent link">&para;</a></h2>
+<p>While <code>cache.pkl</code> is present, read commands (<code>host list</code>, <code>host show</code>, <code>vars show</code>) return the <strong>staged</strong> state rather than the on-disk state.<br />
+A warning banner indicates this:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>⚠ Showing staged inventory (uncommitted changes present)
 </code></pre></div>
 
@@ -833,7 +833,7 @@ Un bandeau d'avertissement le signale :</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>

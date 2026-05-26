@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="fr" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Gestionnaire d'inventaires Ansible en ligne de commande">
+        <meta name="description" content="Command-line Ansible inventory manager">
       
       
       
@@ -25,7 +25,7 @@
     
     
       
-        <title>Référence CLI - bbui</title>
+        <title>CLI reference - bbui</title>
       
     
     
@@ -76,8 +76,8 @@
     <div data-md-component="skip">
       
         
-        <a href="#reference-cli" class="md-skip">
-          Aller au contenu
+        <a href="#cli-reference" class="md-skip">
+          Skip to content
         </a>
       
     </div>
@@ -91,7 +91,7 @@
   
 
 <header class="md-header md-header--shadow" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="En-tête">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="bbui" class="md-header__button md-logo" aria-label="bbui" data-md-component="logo">
       
   
@@ -112,7 +112,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Référence CLI
+              CLI reference
             
           </span>
         </div>
@@ -125,9 +125,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Mode sombre" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -135,9 +135,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Mode clair" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -160,16 +160,16 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Rechercher" placeholder="Rechercher" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
       </label>
-      <nav class="md-search__options" aria-label="Recherche">
+      <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" title="Effacer" aria-label="Effacer" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
@@ -180,7 +180,7 @@
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Initialisation de la recherche
+            Initializing search
           </div>
           <ol class="md-search-result__list" role="presentation"></ol>
         </div>
@@ -192,7 +192,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/samgrcia/bbui" title="Aller au dépôt" class="md-source" data-md-component="source">
+        <a href="https://github.com/samgrcia/bbui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -238,7 +238,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/samgrcia/bbui" title="Aller au dépôt" class="md-source" data-md-component="source">
+      <a href="https://github.com/samgrcia/bbui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -265,7 +265,7 @@
   <span class="md-ellipsis">
     
   
-    Accueil
+    Home
   
 
     
@@ -319,7 +319,7 @@
   <span class="md-ellipsis">
     
   
-    Formats d'inventaire
+    Inventory layouts
   
 
     
@@ -346,7 +346,7 @@
   <span class="md-ellipsis">
     
   
-    Syntaxe NodeSet
+    NodeSet syntax
   
 
     
@@ -373,7 +373,7 @@
   <span class="md-ellipsis">
     
   
-    Workflow de staging
+    Staging workflow
   
 
     
@@ -409,7 +409,7 @@
   <span class="md-ellipsis">
     
   
-    Référence CLI
+    CLI reference
   
 
     
@@ -427,7 +427,7 @@
   <span class="md-ellipsis">
     
   
-    Référence CLI
+    CLI reference
   
 
     
@@ -439,7 +439,7 @@
       
         
 
-<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
@@ -448,15 +448,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table des matières
+      Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#options-globales" class="md-nav__link">
+  <a href="#global-options" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Options globales
+        Global options
       
     </span>
   </a>
@@ -464,15 +464,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#hotes" class="md-nav__link">
+  <a href="#hosts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hôtes
+        Hosts
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Hôtes">
+    <nav class="md-nav" aria-label="Hosts">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -525,15 +525,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#groupes" class="md-nav__link">
+  <a href="#groups" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Groupes
+        Groups
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Groupes">
+    <nav class="md-nav" aria-label="Groups">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -609,10 +609,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#syntaxe-dot-notation" class="md-nav__link">
+  <a href="#dot-notation-syntax" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Syntaxe dot-notation
+        Dot-notation syntax
       
     </span>
   </a>
@@ -695,7 +695,7 @@
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
@@ -704,15 +704,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table des matières
+      Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#options-globales" class="md-nav__link">
+  <a href="#global-options" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Options globales
+        Global options
       
     </span>
   </a>
@@ -720,15 +720,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#hotes" class="md-nav__link">
+  <a href="#hosts" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Hôtes
+        Hosts
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Hôtes">
+    <nav class="md-nav" aria-label="Hosts">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -781,15 +781,15 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#groupes" class="md-nav__link">
+  <a href="#groups" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Groupes
+        Groups
       
     </span>
   </a>
   
-    <nav class="md-nav" aria-label="Groupes">
+    <nav class="md-nav" aria-label="Groups">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -865,10 +865,10 @@
 </li>
         
           <li class="md-nav__item">
-  <a href="#syntaxe-dot-notation" class="md-nav__link">
+  <a href="#dot-notation-syntax" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Syntaxe dot-notation
+        Dot-notation syntax
       
     </span>
   </a>
@@ -950,14 +950,14 @@
   
 
 
-<h1 id="reference-cli">Référence CLI<a class="headerlink" href="#reference-cli" title="Permanent link">&para;</a></h1>
-<h2 id="options-globales">Options globales<a class="headerlink" href="#options-globales" title="Permanent link">&para;</a></h2>
-<p>Toutes les commandes acceptent ces deux options :</p>
+<h1 id="cli-reference">CLI reference<a class="headerlink" href="#cli-reference" title="Permanent link">&para;</a></h1>
+<h2 id="global-options">Global options<a class="headerlink" href="#global-options" title="Permanent link">&para;</a></h2>
+<p>All commands accept these two options:</p>
 <table>
 <thead>
 <tr>
 <th>Option</th>
-<th>Abrégé</th>
+<th>Short</th>
 <th>Env</th>
 <th>Description</th>
 </tr>
@@ -967,21 +967,21 @@
 <td><code>--inventory PATH</code></td>
 <td><code>-i</code></td>
 <td><code>BBUI_INVENTORY</code></td>
-<td>Fichier d'inventaire unique (YAML ou INI). Écriture immédiate.</td>
+<td>Single inventory file (YAML or INI). Writes immediately.</td>
 </tr>
 <tr>
 <td><code>--inventory-dir PATH</code></td>
 <td><code>-I</code></td>
 <td><code>BBUI_INVENTORY_DIR</code></td>
-<td>Répertoire d'inventaire. Active le workflow de staging.</td>
+<td>Inventory directory. Enables the staging workflow.</td>
 </tr>
 </tbody>
 </table>
-<p>Quand <code>--inventory-dir</code> est utilisé, les modifications sont <strong>stagées</strong> et requièrent un <code>bbcli commit</code> pour être persistées.</p>
+<p>When <code>--inventory-dir</code> is used, changes are <strong>staged</strong> and require a <code>bbcli commit</code> to be persisted.</p>
 <hr />
-<h2 id="hotes">Hôtes<a class="headerlink" href="#hotes" title="Permanent link">&para;</a></h2>
+<h2 id="hosts">Hosts<a class="headerlink" href="#hosts" title="Permanent link">&para;</a></h2>
 <h3 id="bbcli-host-add-nodeset"><code>bbcli host add &lt;nodeset&gt;</code><a class="headerlink" href="#bbcli-host-add-nodeset" title="Permanent link">&para;</a></h3>
-<p>Stage l'ajout d'un ou plusieurs hôtes. Supporte la syntaxe NodeSet.</p>
+<p>Stages the addition of one or more hosts. Supports NodeSet syntax.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span>web01<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;web[01:10]&#39;</span><span class="w"> </span>--groups<span class="w"> </span>webservers,staging<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;c[001:100]&#39;</span><span class="w"> </span>--groups<span class="w"> </span>fn_compute,hw_typeA,os_ubuntu<span class="w"> </span>-I<span class="w"> </span>./inventory/
@@ -990,29 +990,29 @@
 <thead>
 <tr>
 <th>Option</th>
-<th>Abrégé</th>
+<th>Short</th>
 <th>Description</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>--groups LISTE</code></td>
+<td><code>--groups LIST</code></td>
 <td><code>-g</code></td>
-<td>Groupes séparés par des virgules à assigner aux hôtes</td>
+<td>Comma-separated list of groups to assign to the hosts</td>
 </tr>
 </tbody>
 </table>
-<p><strong>Layout BlueBanquise</strong> : les trois préfixes <code>fn_*</code>, <code>hw_*</code>, <code>os_*</code> sont obligatoires.<br />
-Un hôte déjà existant est silencieusement ignoré (skip).</p>
+<p><strong>BlueBanquise layout</strong>: the three prefixes <code>fn_*</code>, <code>hw_*</code>, <code>os_*</code> are mandatory.<br />
+A host that already exists is silently skipped.</p>
 <hr />
 <h3 id="bbcli-host-remove-hostname"><code>bbcli host remove &lt;hostname&gt;</code><a class="headerlink" href="#bbcli-host-remove-hostname" title="Permanent link">&para;</a></h3>
-<p>Stage la suppression d'un hôte.</p>
+<p>Stages the removal of a host.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>bbcli<span class="w"> </span>host<span class="w"> </span>remove<span class="w"> </span>web05<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
 <hr />
 <h3 id="bbcli-host-list"><code>bbcli host list</code><a class="headerlink" href="#bbcli-host-list" title="Permanent link">&para;</a></h3>
-<p>Affiche tous les hôtes, leurs groupes et leurs variables.<br />
-Si des changements sont stagés, la vue stagée est affichée (avec avertissement).</p>
+<p>Lists all hosts, their groups, and their variables.<br />
+If changes are staged, the staged view is shown (with a warning).</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>bbcli<span class="w"> </span>host<span class="w"> </span>list<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>┌─ Hosts ──────────────────────────────────────────────────────┐
@@ -1023,33 +1023,33 @@ Si des changements sont stagés, la vue stagée est affichée (avec avertissemen
 </code></pre></div>
 <hr />
 <h3 id="bbcli-host-show-nodeset-varname"><code>bbcli host show &lt;nodeset&gt; [varname]</code><a class="headerlink" href="#bbcli-host-show-nodeset-varname" title="Permanent link">&para;</a></h3>
-<p>Affiche les détails et les variables d'un ou plusieurs hôtes.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Détails complets d&#39;un hôte</span>
+<p>Shows details and variables for one or more hosts.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="c1"># Full details for a single host</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>bbcli<span class="w"> </span>host<span class="w"> </span>show<span class="w"> </span>web01<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a>
-<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Détails de plusieurs hôtes via NodeSet</span>
+<a id="__codelineno-4-4" name="__codelineno-4-4" href="#__codelineno-4-4"></a><span class="c1"># Details for multiple hosts via NodeSet</span>
 <a id="__codelineno-4-5" name="__codelineno-4-5" href="#__codelineno-4-5"></a>bbcli<span class="w"> </span>host<span class="w"> </span>show<span class="w"> </span><span class="s1">&#39;web[01:05]&#39;</span><span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-4-6" name="__codelineno-4-6" href="#__codelineno-4-6"></a>
-<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Afficher une seule variable pour une plage d&#39;hôtes</span>
+<a id="__codelineno-4-7" name="__codelineno-4-7" href="#__codelineno-4-7"></a><span class="c1"># Show a single variable across a range of hosts</span>
 <a id="__codelineno-4-8" name="__codelineno-4-8" href="#__codelineno-4-8"></a>bbcli<span class="w"> </span>host<span class="w"> </span>show<span class="w"> </span><span class="s1">&#39;c[001:010]&#39;</span><span class="w"> </span>bmc.ip4<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-4-9" name="__codelineno-4-9" href="#__codelineno-4-9"></a>bbcli<span class="w"> </span>host<span class="w"> </span>show<span class="w"> </span><span class="s1">&#39;c[001:010]&#39;</span><span class="w"> </span>disks<span class="o">[</span><span class="m">0</span><span class="o">]</span>.name<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
-<p>En mode variable unique, le résultat est un tableau compact <code>Hôte | Valeur</code>.<br />
-En mode complet, chaque hôte est affiché dans un bloc avec ses variables en dot-notation.</p>
+<p>In single-variable mode, the output is a compact <code>Host | Value</code> table.<br />
+In full mode, each host is shown in its own block with variables in dot-notation.</p>
 <hr />
-<h2 id="groupes">Groupes<a class="headerlink" href="#groupes" title="Permanent link">&para;</a></h2>
+<h2 id="groups">Groups<a class="headerlink" href="#groups" title="Permanent link">&para;</a></h2>
 <h3 id="bbcli-group-add-name"><code>bbcli group add &lt;name&gt;</code><a class="headerlink" href="#bbcli-group-add-name" title="Permanent link">&para;</a></h3>
-<p>Stage l'ajout d'un groupe.</p>
+<p>Stages the addition of a group.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>bbcli<span class="w"> </span>group<span class="w"> </span>add<span class="w"> </span>storage<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
 <hr />
 <h3 id="bbcli-group-remove-name"><code>bbcli group remove &lt;name&gt;</code><a class="headerlink" href="#bbcli-group-remove-name" title="Permanent link">&para;</a></h3>
-<p>Stage la suppression d'un groupe.</p>
+<p>Stages the removal of a group.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>bbcli<span class="w"> </span>group<span class="w"> </span>remove<span class="w"> </span>storage<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
 <hr />
 <h3 id="bbcli-group-list"><code>bbcli group list</code><a class="headerlink" href="#bbcli-group-list" title="Permanent link">&para;</a></h3>
-<p>Liste tous les groupes avec leurs hôtes (NodeSet replié) et leurs sous-groupes.</p>
+<p>Lists all groups with their hosts (folded NodeSet) and child groups.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>bbcli<span class="w"> </span>group<span class="w"> </span>list<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>┌─ Groups ──────────────────────────────────────────┐
@@ -1061,33 +1061,33 @@ En mode complet, chaque hôte est affiché dans un bloc avec ses variables en do
 </code></pre></div>
 <hr />
 <h3 id="bbcli-group-show-name"><code>bbcli group show &lt;name&gt;</code><a class="headerlink" href="#bbcli-group-show-name" title="Permanent link">&para;</a></h3>
-<p>Affiche les détails d'un groupe : hôtes, sous-groupes et variables.</p>
+<p>Shows details of a group: hosts, child groups, and variables.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a>bbcli<span class="w"> </span>group<span class="w"> </span>show<span class="w"> </span>webservers<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
 <hr />
 <h2 id="variables">Variables<a class="headerlink" href="#variables" title="Permanent link">&para;</a></h2>
 <h3 id="bbcli-vars-show-varname"><code>bbcli vars show &lt;varname&gt;</code><a class="headerlink" href="#bbcli-vars-show-varname" title="Permanent link">&para;</a></h3>
-<p>Affiche chaque hôte et groupe qui définit <code>&lt;varname&gt;</code>, avec la valeur et le fichier source.<br />
-Supporte la dot-notation pour les valeurs imbriquées.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Variable simple</span>
+<p>Shows every host and group that defines <code>&lt;varname&gt;</code>, with its value and source file.<br />
+Supports dot-notation for nested values.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="c1"># Simple variable</span>
 <a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a>bbcli<span class="w"> </span>vars<span class="w"> </span>show<span class="w"> </span>ansible_user<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>
-<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Variable imbriquée</span>
+<a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="c1"># Nested variable</span>
 <a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a>bbcli<span class="w"> </span>vars<span class="w"> </span>show<span class="w"> </span>network.ip<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>bbcli<span class="w"> </span>vars<span class="w"> </span>show<span class="w"> </span>bmc.ip4<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-10-7" name="__codelineno-10-7" href="#__codelineno-10-7"></a>
-<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># Élément de liste</span>
+<a id="__codelineno-10-8" name="__codelineno-10-8" href="#__codelineno-10-8"></a><span class="c1"># List element</span>
 <a id="__codelineno-10-9" name="__codelineno-10-9" href="#__codelineno-10-9"></a>bbcli<span class="w"> </span>vars<span class="w"> </span>show<span class="w"> </span>disks<span class="o">[</span><span class="m">0</span><span class="o">]</span>.name<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-10-10" name="__codelineno-10-10" href="#__codelineno-10-10"></a>
-<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1"># Filtres</span>
-<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>bbcli<span class="w"> </span>vars<span class="w"> </span>show<span class="w"> </span>ansible_user<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w"> </span>--hosts<span class="w">   </span><span class="c1"># hôtes uniquement</span>
-<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>bbcli<span class="w"> </span>vars<span class="w"> </span>show<span class="w"> </span>ntp_server<span class="w">   </span>-I<span class="w"> </span>./inventory/<span class="w"> </span>--groups<span class="w">  </span><span class="c1"># groupes uniquement</span>
+<a id="__codelineno-10-11" name="__codelineno-10-11" href="#__codelineno-10-11"></a><span class="c1"># Filters</span>
+<a id="__codelineno-10-12" name="__codelineno-10-12" href="#__codelineno-10-12"></a>bbcli<span class="w"> </span>vars<span class="w"> </span>show<span class="w"> </span>ansible_user<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w"> </span>--hosts<span class="w">   </span><span class="c1"># hosts only</span>
+<a id="__codelineno-10-13" name="__codelineno-10-13" href="#__codelineno-10-13"></a>bbcli<span class="w"> </span>vars<span class="w"> </span>show<span class="w"> </span>ntp_server<span class="w">   </span>-I<span class="w"> </span>./inventory/<span class="w"> </span>--groups<span class="w">  </span><span class="c1"># groups only</span>
 </code></pre></div>
 <table>
 <thead>
 <tr>
 <th>Option</th>
-<th>Abrégé</th>
+<th>Short</th>
 <th>Description</th>
 </tr>
 </thead>
@@ -1095,16 +1095,16 @@ Supporte la dot-notation pour les valeurs imbriquées.</p>
 <tr>
 <td><code>--hosts</code></td>
 <td><code>-H</code></td>
-<td>N'affiche que les correspondances sur les hôtes</td>
+<td>Show only host matches</td>
 </tr>
 <tr>
 <td><code>--groups</code></td>
 <td><code>-G</code></td>
-<td>N'affiche que les correspondances sur les groupes</td>
+<td>Show only group matches</td>
 </tr>
 </tbody>
 </table>
-<p>Exemple de sortie :</p>
+<p>Example output:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a>         Variable: ansible_user
 <a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>┌───────┬────────────┬────────┬──────────────────────────────────────┐
 <a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a>│ Kind  │ Owner      │ Value  │ Source file                           │
@@ -1113,38 +1113,38 @@ Supporte la dot-notation pour les valeurs imbriquées.</p>
 <a id="__codelineno-11-6" name="__codelineno-11-6" href="#__codelineno-11-6"></a>│ group │ webservers │ deploy │ inventory/group_vars/webservers.yml   │
 <a id="__codelineno-11-7" name="__codelineno-11-7" href="#__codelineno-11-7"></a>└───────┴────────────┴────────┴──────────────────────────────────────┘
 </code></pre></div>
-<h3 id="syntaxe-dot-notation">Syntaxe dot-notation<a class="headerlink" href="#syntaxe-dot-notation" title="Permanent link">&para;</a></h3>
+<h3 id="dot-notation-syntax">Dot-notation syntax<a class="headerlink" href="#dot-notation-syntax" title="Permanent link">&para;</a></h3>
 <table>
 <thead>
 <tr>
-<th>Type de valeur</th>
+<th>Value type</th>
 <th>Format</th>
-<th>Exemple</th>
+<th>Example</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td>Scalaire</td>
+<td>Scalar</td>
 <td><code>key</code></td>
 <td><code>ansible_user</code></td>
 </tr>
 <tr>
-<td>Dict imbriqué</td>
+<td>Nested dict</td>
 <td><code>key.sub</code></td>
 <td><code>network.ip</code></td>
 </tr>
 <tr>
-<td>Dict profond</td>
+<td>Deep dict</td>
 <td><code>key.sub1.sub2</code></td>
 <td><code>interfaces.eth0.speed</code></td>
 </tr>
 <tr>
-<td>Élément de liste</td>
+<td>List element</td>
 <td><code>key[i]</code></td>
 <td><code>dns_servers[0]</code></td>
 </tr>
 <tr>
-<td>Clé dans liste</td>
+<td>Key in list</td>
 <td><code>key[i].sub</code></td>
 <td><code>disks[0].name</code></td>
 </tr>
@@ -1153,27 +1153,27 @@ Supporte la dot-notation pour les valeurs imbriquées.</p>
 <hr />
 <h2 id="staging">Staging<a class="headerlink" href="#staging" title="Permanent link">&para;</a></h2>
 <h3 id="bbcli-pending"><code>bbcli pending</code><a class="headerlink" href="#bbcli-pending" title="Permanent link">&para;</a></h3>
-<p>Affiche les changements stagés et les fichiers qui seront écrits au prochain <code>commit</code>.</p>
+<p>Shows staged changes and the files that will be written on the next <code>commit</code>.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a>bbcli<span class="w"> </span>pending<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
-<p>Nécessite <code>--inventory-dir</code>.</p>
+<p>Requires <code>--inventory-dir</code>.</p>
 <hr />
 <h3 id="bbcli-commit"><code>bbcli commit</code><a class="headerlink" href="#bbcli-commit" title="Permanent link">&para;</a></h3>
-<p>Écrit tous les changements stagés sur disque et vide le cache de staging.</p>
+<p>Writes all staged changes to disk and clears the staging cache.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a>bbcli<span class="w"> </span>commit<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
-<p>Nécessite <code>--inventory-dir</code>.</p>
+<p>Requires <code>--inventory-dir</code>.</p>
 <hr />
 <h3 id="bbcli-discard"><code>bbcli discard</code><a class="headerlink" href="#bbcli-discard" title="Permanent link">&para;</a></h3>
-<p>Abandonne tous les changements stagés sans écrire sur disque.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>bbcli<span class="w"> </span>discard<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w">          </span><span class="c1"># demande confirmation</span>
-<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>bbcli<span class="w"> </span>discard<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w"> </span>--force<span class="w">  </span><span class="c1"># sans confirmation</span>
+<p>Drops all staged changes without writing to disk.</p>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a>bbcli<span class="w"> </span>discard<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w">          </span><span class="c1"># asks for confirmation</span>
+<a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>bbcli<span class="w"> </span>discard<span class="w"> </span>-I<span class="w"> </span>./inventory/<span class="w"> </span>--force<span class="w">  </span><span class="c1"># no confirmation</span>
 </code></pre></div>
 <table>
 <thead>
 <tr>
 <th>Option</th>
-<th>Abrégé</th>
+<th>Short</th>
 <th>Description</th>
 </tr>
 </thead>
@@ -1181,11 +1181,11 @@ Supporte la dot-notation pour les valeurs imbriquées.</p>
 <tr>
 <td><code>--force</code></td>
 <td><code>-f</code></td>
-<td>Ignore la demande de confirmation</td>
+<td>Skip confirmation prompt</td>
 </tr>
 </tbody>
 </table>
-<p>Nécessite <code>--inventory-dir</code>.</p>
+<p>Requires <code>--inventory-dir</code>.</p>
 
 
 
@@ -1235,7 +1235,7 @@ Supporte la dot-notation pour les valeurs imbriquées.</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>

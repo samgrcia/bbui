@@ -1,12 +1,12 @@
 
 <!doctype html>
-<html lang="fr" class="no-js">
+<html lang="en" class="no-js">
   <head>
     
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Gestionnaire d'inventaires Ansible en ligne de commande">
+        <meta name="description" content="Command-line Ansible inventory manager">
       
       
       
@@ -27,7 +27,7 @@
     
     
       
-        <title>Syntaxe NodeSet - bbui</title>
+        <title>NodeSet syntax - bbui</title>
       
     
     
@@ -78,8 +78,8 @@
     <div data-md-component="skip">
       
         
-        <a href="#syntaxe-nodeset" class="md-skip">
-          Aller au contenu
+        <a href="#nodeset-syntax" class="md-skip">
+          Skip to content
         </a>
       
     </div>
@@ -93,7 +93,7 @@
   
 
 <header class="md-header md-header--shadow" data-md-component="header">
-  <nav class="md-header__inner md-grid" aria-label="En-tête">
+  <nav class="md-header__inner md-grid" aria-label="Header">
     <a href=".." title="bbui" class="md-header__button md-logo" aria-label="bbui" data-md-component="logo">
       
   
@@ -114,7 +114,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Syntaxe NodeSet
+              NodeSet syntax
             
           </span>
         </div>
@@ -127,9 +127,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode sombre"  type="radio" name="__palette" id="__palette_0">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="default" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_0">
     
-      <label class="md-header__button md-icon" title="Mode sombre" for="__palette_1" hidden>
+      <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_1" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a4 4 0 0 0-4 4 4 4 0 0 0 4 4 4 4 0 0 0 4-4 4 4 0 0 0-4-4m0 10a6 6 0 0 1-6-6 6 6 0 0 1 6-6 6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -137,9 +137,9 @@
     
     
     
-    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Mode clair"  type="radio" name="__palette" id="__palette_1">
+    <input class="md-option" data-md-color-media="" data-md-color-scheme="slate" data-md-color-primary="indigo" data-md-color-accent="indigo"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_1">
     
-      <label class="md-header__button md-icon" title="Mode clair" for="__palette_0" hidden>
+      <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_0" hidden>
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 18c-.89 0-1.74-.2-2.5-.55C11.56 16.5 13 14.42 13 12s-1.44-4.5-3.5-5.45C10.26 6.2 11.11 6 12 6a6 6 0 0 1 6 6 6 6 0 0 1-6 6m8-9.31V4h-4.69L12 .69 8.69 4H4v4.69L.69 12 4 15.31V20h4.69L12 23.31 15.31 20H20v-4.69L23.31 12z"/></svg>
       </label>
     
@@ -162,16 +162,16 @@
   <label class="md-search__overlay" for="__search"></label>
   <div class="md-search__inner" role="search">
     <form class="md-search__form" name="search">
-      <input type="text" class="md-search__input" name="query" aria-label="Rechercher" placeholder="Rechercher" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
       <label class="md-search__icon md-icon" for="__search">
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
         
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
       </label>
-      <nav class="md-search__options" aria-label="Recherche">
+      <nav class="md-search__options" aria-label="Search">
         
-        <button type="reset" class="md-search__icon md-icon" title="Effacer" aria-label="Effacer" tabindex="-1">
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
           
           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
         </button>
@@ -182,7 +182,7 @@
       <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
         <div class="md-search-result" data-md-component="search-result">
           <div class="md-search-result__meta">
-            Initialisation de la recherche
+            Initializing search
           </div>
           <ol class="md-search-result__list" role="presentation"></ol>
         </div>
@@ -194,7 +194,7 @@
     
     
       <div class="md-header__source">
-        <a href="https://github.com/samgrcia/bbui" title="Aller au dépôt" class="md-source" data-md-component="source">
+        <a href="https://github.com/samgrcia/bbui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -240,7 +240,7 @@
   </label>
   
     <div class="md-nav__source">
-      <a href="https://github.com/samgrcia/bbui" title="Aller au dépôt" class="md-source" data-md-component="source">
+      <a href="https://github.com/samgrcia/bbui" title="Go to repository" class="md-source" data-md-component="source">
   <div class="md-source__icon md-icon">
     
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 7.1.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2025 Fonticons, Inc.--><path d="M439.6 236.1 244 40.5c-5.4-5.5-12.8-8.5-20.4-8.5s-15 3-20.4 8.4L162.5 81l51.5 51.5c27.1-9.1 52.7 16.8 43.4 43.7l49.7 49.7c34.2-11.8 61.2 31 35.5 56.7-26.5 26.5-70.2-2.9-56-37.3L240.3 199v121.9c25.3 12.5 22.3 41.8 9.1 55-6.4 6.4-15.2 10.1-24.3 10.1s-17.8-3.6-24.3-10.1c-17.6-17.6-11.1-46.9 11.2-56v-123c-20.8-8.5-24.6-30.7-18.6-45L142.6 101 8.5 235.1C3 240.6 0 247.9 0 255.5s3 15 8.5 20.4l195.6 195.7c5.4 5.4 12.7 8.4 20.4 8.4s15-3 20.4-8.4l194.7-194.7c5.4-5.4 8.4-12.8 8.4-20.4s-3-15-8.4-20.4"/></svg>
@@ -267,7 +267,7 @@
   <span class="md-ellipsis">
     
   
-    Accueil
+    Home
   
 
     
@@ -321,7 +321,7 @@
   <span class="md-ellipsis">
     
   
-    Formats d'inventaire
+    Inventory layouts
   
 
     
@@ -357,7 +357,7 @@
   <span class="md-ellipsis">
     
   
-    Syntaxe NodeSet
+    NodeSet syntax
   
 
     
@@ -375,7 +375,7 @@
   <span class="md-ellipsis">
     
   
-    Syntaxe NodeSet
+    NodeSet syntax
   
 
     
@@ -387,7 +387,7 @@
       
         
 
-<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
@@ -396,15 +396,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table des matières
+      Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#syntaxe-clustershell-commandes-cli" class="md-nav__link">
+  <a href="#clustershell-syntax-cli-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Syntaxe ClusterShell (commandes CLI)
+        ClusterShell syntax (CLI commands)
       
     </span>
   </a>
@@ -412,10 +412,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#syntaxe-ansible-fichiers-ini" class="md-nav__link">
+  <a href="#ansible-syntax-ini-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Syntaxe Ansible (fichiers INI)
+        Ansible syntax (INI files)
       
     </span>
   </a>
@@ -423,10 +423,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fold-et-expand" class="md-nav__link">
+  <a href="#fold-and-expand" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fold et expand
+        Fold and expand
       
     </span>
   </a>
@@ -455,7 +455,7 @@
   <span class="md-ellipsis">
     
   
-    Workflow de staging
+    Staging workflow
   
 
     
@@ -482,7 +482,7 @@
   <span class="md-ellipsis">
     
   
-    Référence CLI
+    CLI reference
   
 
     
@@ -508,7 +508,7 @@
                   <div class="md-sidebar__inner">
                     
 
-<nav class="md-nav md-nav--secondary" aria-label="Table des matières">
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
   
   
   
@@ -517,15 +517,15 @@
   
     <label class="md-nav__title" for="__toc">
       <span class="md-nav__icon md-icon"></span>
-      Table des matières
+      Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#syntaxe-clustershell-commandes-cli" class="md-nav__link">
+  <a href="#clustershell-syntax-cli-commands" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Syntaxe ClusterShell (commandes CLI)
+        ClusterShell syntax (CLI commands)
       
     </span>
   </a>
@@ -533,10 +533,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#syntaxe-ansible-fichiers-ini" class="md-nav__link">
+  <a href="#ansible-syntax-ini-files" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Syntaxe Ansible (fichiers INI)
+        Ansible syntax (INI files)
       
     </span>
   </a>
@@ -544,10 +544,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#fold-et-expand" class="md-nav__link">
+  <a href="#fold-and-expand" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Fold et expand
+        Fold and expand
       
     </span>
   </a>
@@ -574,17 +574,17 @@
   
 
 
-<h1 id="syntaxe-nodeset">Syntaxe NodeSet<a class="headerlink" href="#syntaxe-nodeset" title="Permanent link">&para;</a></h1>
-<p>bbui utilise <a href="https://clustershell.readthedocs.io/">ClusterShell</a> pour manipuler les plages d'hôtes.<br />
-Deux syntaxes coexistent : la syntaxe ClusterShell (pour les commandes CLI) et la syntaxe Ansible (dans les fichiers INI).</p>
+<h1 id="nodeset-syntax">NodeSet syntax<a class="headerlink" href="#nodeset-syntax" title="Permanent link">&para;</a></h1>
+<p>bbui uses <a href="https://clustershell.readthedocs.io/">ClusterShell</a> to handle host range expressions.<br />
+Two syntaxes coexist: ClusterShell syntax (CLI commands) and Ansible syntax (INI files).</p>
 <hr />
-<h2 id="syntaxe-clustershell-commandes-cli">Syntaxe ClusterShell (commandes CLI)<a class="headerlink" href="#syntaxe-clustershell-commandes-cli" title="Permanent link">&para;</a></h2>
-<p>Toute commande acceptant un nom d'hôte accepte également une expression NodeSet.</p>
+<h2 id="clustershell-syntax-cli-commands">ClusterShell syntax (CLI commands)<a class="headerlink" href="#clustershell-syntax-cli-commands" title="Permanent link">&para;</a></h2>
+<p>Any command that accepts a hostname also accepts a NodeSet expression.</p>
 <table>
 <thead>
 <tr>
 <th>Expression</th>
-<th>Expansion</th>
+<th>Expands to</th>
 </tr>
 </thead>
 <tbody>
@@ -598,36 +598,36 @@ Deux syntaxes coexistent : la syntaxe ClusterShell (pour les commandes CLI) et l
 </tr>
 <tr>
 <td><code>web[01-10]</code></td>
-<td><code>web01</code> … <code>web10</code> (tiret, synonyme de <code>:</code> en ClusterShell)</td>
+<td><code>web01</code> … <code>web10</code> (dash, synonym for <code>:</code> in ClusterShell)</td>
 </tr>
 <tr>
 <td><code>web[01:10/2]</code></td>
-<td><code>web01</code>, <code>web03</code>, <code>web05</code> … (pas de 2)</td>
+<td><code>web01</code>, <code>web03</code>, <code>web05</code> … (step of 2)</td>
 </tr>
 <tr>
 <td><code>web[01:10],db[1:5]</code></td>
-<td>union des deux plages</td>
+<td>union of both ranges</td>
 </tr>
 <tr>
 <td><code>web[01:10]!web05</code></td>
-<td>exclusion de <code>web05</code></td>
+<td>exclusion of <code>web05</code></td>
 </tr>
 <tr>
 <td><code>c[001:100]</code></td>
-<td><code>c001</code> … <code>c100</code> (zéro-padding préservé)</td>
+<td><code>c001</code> … <code>c100</code> (zero-padding preserved)</td>
 </tr>
 </tbody>
 </table>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Ajouter 10 nœuds d&#39;un coup</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="c1"># Add 10 nodes at once</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>bbcli<span class="w"> </span>host<span class="w"> </span>add<span class="w"> </span><span class="s1">&#39;c[001:010]&#39;</span><span class="w"> </span>--groups<span class="w"> </span>fn_compute,hw_typeA,os_ubuntu<span class="w"> </span>-I<span class="w"> </span>./inventory/
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>
-<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Afficher les vars d&#39;une plage</span>
+<a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="c1"># Show a variable across a range of hosts</span>
 <a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a>bbcli<span class="w"> </span>host<span class="w"> </span>show<span class="w"> </span><span class="s1">&#39;c[001:004]&#39;</span><span class="w"> </span>bmc.ip4<span class="w"> </span>-I<span class="w"> </span>./inventory/
 </code></pre></div>
 <hr />
-<h2 id="syntaxe-ansible-fichiers-ini">Syntaxe Ansible (fichiers INI)<a class="headerlink" href="#syntaxe-ansible-fichiers-ini" title="Permanent link">&para;</a></h2>
-<p>Dans les fichiers INI générés par bbui, les plages utilisent le séparateur <code>:</code> (standard Ansible).<br />
-Le séparateur <code>-</code> (ClusterShell) <strong>n'est pas reconnu</strong> par Ansible.</p>
+<h2 id="ansible-syntax-ini-files">Ansible syntax (INI files)<a class="headerlink" href="#ansible-syntax-ini-files" title="Permanent link">&para;</a></h2>
+<p>In INI files generated by bbui, ranges use the <code>:</code> separator (Ansible standard).<br />
+The <code>-</code> separator (ClusterShell) is <strong>not recognised</strong> by Ansible.</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="k">[fn_compute]</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="na">c[001</span><span class="o">:</span><span class="s">004]</span>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="na">g[001</span><span class="o">:</span><span class="s">002]</span>
@@ -635,15 +635,15 @@ Le séparateur <code>-</code> (ClusterShell) <strong>n'est pas reconnu</strong> 
 <a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="k">[fn_management]</span>
 <a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="na">mgt[1</span><span class="o">:</span><span class="s">2]</span>
 </code></pre></div>
-<p>bbui convertit automatiquement lors de l'écriture : <code>node[01-03]</code> (ClusterShell) → <code>node[01:03]</code> (Ansible).</p>
+<p>bbui converts automatically on write: <code>node[01-03]</code> (ClusterShell) → <code>node[01:03]</code> (Ansible).</p>
 <hr />
-<h2 id="fold-et-expand">Fold et expand<a class="headerlink" href="#fold-et-expand" title="Permanent link">&para;</a></h2>
+<h2 id="fold-and-expand">Fold and expand<a class="headerlink" href="#fold-and-expand" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Opération</th>
-<th>Entrée</th>
-<th>Sortie</th>
+<th>Operation</th>
+<th>Input</th>
+<th>Output</th>
 </tr>
 </thead>
 <tbody>
@@ -659,11 +659,11 @@ Le séparateur <code>-</code> (ClusterShell) <strong>n'est pas reconnu</strong> 
 </tr>
 </tbody>
 </table>
-<p>Les nœuds non-contigus sont séparés par une virgule :</p>
+<p>Non-contiguous nodes are separated by a comma:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a>[&#39;web01&#39;, &#39;web03&#39;]   →  web[01,03]
-<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>[&#39;web01&#39;, &#39;db01&#39;]    →  db01,web01   (groupes distincts → deux lignes en INI)
+<a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>[&#39;web01&#39;, &#39;db01&#39;]    →  db01,web01   (distinct groups → two lines in INI)
 </code></pre></div>
-<p>Dans les fichiers INI, chaque groupe de la liste repliée est écrit sur une ligne séparée :</p>
+<p>In INI files, each top-level group from the folded expression is written on its own line:</p>
 <div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="k">[my_group]</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a><span class="na">db01</span>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="na">web[01,03]</span>
@@ -717,7 +717,7 @@ Le séparateur <code>-</code> (ClusterShell) <strong>n'est pas reconnu</strong> 
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copi\u00e9 dans le presse-papier", "clipboard.copy": "Copier dans le presse-papier", "search.result.more.one": "1 de plus sur cette page", "search.result.more.other": "# de plus sur cette page", "search.result.none": "Aucun document trouv\u00e9", "search.result.one": "1 document trouv\u00e9", "search.result.other": "# documents trouv\u00e9s", "search.result.placeholder": "Taper pour d\u00e9marrer la recherche", "search.result.term.missing": "Non trouv\u00e9", "select.version": "S\u00e9lectionner la version"}, "version": null}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.instant", "navigation.sections", "content.code.copy"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
     
     
       <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
