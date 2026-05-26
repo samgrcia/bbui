@@ -23,14 +23,25 @@ from ClusterShell.NodeSet import NodeSet
 # Matches a numeric range inside brackets written with ClusterShell's dash syntax.
 _CS_RANGE_RE = re.compile(r"(\d)-(\d)")
 
+# Matches Ansible-style [start:end] ranges (colon separator, no step).
+# Used to convert Ansible syntax to ClusterShell dash syntax before expansion.
+_ANSIBLE_RANGE_RE = re.compile(r"\[([0-9a-z]+):([0-9a-z]+)\]")
+
+
+def _ansible_to_cs(expression: str) -> str:
+    """Convert Ansible [start:end] range syntax to ClusterShell [start-end]."""
+    return _ANSIBLE_RANGE_RE.sub(r"[\1-\2]", expression)
+
 
 def expand_nodeset(expression: str) -> list[str]:
     """Expand *expression* to a sorted list of hostnames.
 
+    Accepts both ClusterShell dash syntax (``web[01-10]``) and Ansible colon
+    syntax (``web[01:10]``, ``hmcr[11:12]s[0:1]``).
     Raises ``ValueError`` on invalid expressions.
     """
     try:
-        return list(NodeSet(expression))
+        return list(NodeSet(_ansible_to_cs(expression)))
     except Exception as exc:
         raise ValueError(f"Invalid nodeset {expression!r}: {exc}") from exc
 
@@ -38,12 +49,16 @@ def expand_nodeset(expression: str) -> list[str]:
 def fold_nodeset(hostnames: list[str] | set[str]) -> str:
     """Fold a collection of hostnames into a compact NodeSet string.
 
+    Each item is converted from Ansible colon-range syntax to ClusterShell
+    dash syntax before folding, so stale-cache entries like ``hmcr[11:12]s[0:1]``
+    are handled rather than causing a NodeSetParseRangeError.
+
     Examples:
         ['web01', 'web02', 'web03']  ->  'web[01-03]'
         ['web01', 'db01']            ->  'db01,web01'
         ['web01']                    ->  'web01'
     """
-    ns = NodeSet.fromlist(hostnames)
+    ns = NodeSet.fromlist(_ansible_to_cs(h) for h in hostnames)
     return str(ns)
 
 

@@ -9,7 +9,44 @@ import pytest
 import yaml
 
 from bbui.backend.models import Group, Host, Inventory
-from bbui.backend.parser import dump_inventory, load_inventory
+from bbui.backend.parser import _expand_hostpattern, dump_inventory, load_inventory
+
+
+# ---------------------------------------------------------------------------
+# Range expansion
+# ---------------------------------------------------------------------------
+
+
+def test_expand_hostpattern_no_range() -> None:
+    assert _expand_hostpattern("web01") == ["web01"]
+
+
+def test_expand_hostpattern_numeric() -> None:
+    assert _expand_hostpattern("web[1:3]") == ["web1", "web2", "web3"]
+
+
+def test_expand_hostpattern_numeric_padded() -> None:
+    assert _expand_hostpattern("web[01:03]") == ["web01", "web02", "web03"]
+
+
+def test_expand_hostpattern_alpha() -> None:
+    assert _expand_hostpattern("g[a:c]") == ["ga", "gb", "gc"]
+
+
+def test_expand_hostpattern_with_suffix() -> None:
+    assert _expand_hostpattern("srv[1:2].dc") == ["srv1.dc", "srv2.dc"]
+
+
+def test_expand_hostpattern_multi_range() -> None:
+    assert _expand_hostpattern("hmcr[11:12]s[0:1]") == [
+        "hmcr11s0", "hmcr11s1", "hmcr12s0", "hmcr12s1"
+    ]
+
+
+def test_expand_hostpattern_multi_range_padded() -> None:
+    assert _expand_hostpattern("n[01:02]c[1:3]") == [
+        "n01c1", "n01c2", "n01c3", "n02c1", "n02c2", "n02c3"
+    ]
 
 
 # ---------------------------------------------------------------------------
