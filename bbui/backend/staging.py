@@ -335,6 +335,14 @@ def load_inventory_or_cache(inventory_dir: Path) -> Inventory:
     # 3. Full parse + persist read cache
     if BbInventory.is_bb_layout(inventory_dir):
         inventory: Inventory = BbInventory.load(inventory_dir)
+    elif inventory_dir.is_dir():
+        # Directory exists but has no BB layout markers yet (empty or brand-new).
+        # Bootstrap an empty BbInventory so that the first `host add` can proceed
+        # and `commit` will create the cluster/ tree from scratch.
+        try:
+            inventory = load_inventory_dir(inventory_dir)
+        except FileNotFoundError:
+            return BbInventory()
     else:
         inventory = load_inventory_dir(inventory_dir)
     _save_inv_cache(inventory, inventory_dir)
