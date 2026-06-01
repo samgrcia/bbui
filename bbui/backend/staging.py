@@ -71,6 +71,7 @@ class Change:
     subject: str                        # hostname or group name
     detail:  str         = ""           # human-readable extra info
     target_file: Path | None = None     # file that will be written on commit
+    payload: dict[str, Any] | None = None  # variable mutation data: {"key": str, "value": Any}
 
 
 # ---------------------------------------------------------------------------
@@ -130,6 +131,24 @@ def _write_cache(staging: StagingArea, inventory_dir: Path) -> None:
     cache.parent.mkdir(parents=True, exist_ok=True)
     with cache.open("wb") as fh:
         pickle.dump(staging, fh)
+
+
+def clear_cache(inventory_dir: Path) -> list[Path]:
+    """Delete all cache files under *inventory_dir*/.bbui/.
+
+    Removes both the staging cache (cache.pkl) and the read cache
+    (inventory_cache.pkl). Returns the list of files that were deleted.
+    """
+    removed: list[Path] = []
+    for name in (CACHE_FILE, INV_CACHE_FILE):
+        p = inventory_dir / BBUI_DIR / name
+        if p.exists():
+            p.unlink()
+            removed.append(p)
+    bbui_dir = inventory_dir / BBUI_DIR
+    if bbui_dir.exists() and not any(bbui_dir.iterdir()):
+        bbui_dir.rmdir()
+    return removed
 
 
 def discard(inventory_dir: Path) -> None:
@@ -362,6 +381,12 @@ def stage(
                 )
             elif change.kind in (ChangeKind.GROUP_ADDED, ChangeKind.GROUP_REMOVED):
                 change.target_file = inventory.group_file(change.subject, inventory_dir)
+            elif change.kind == ChangeKind.HOST_VAR_SET:
+                try:
+                    host = inventory.get_host(change.subject)
+                    change.target_file = inventory._target_nodes_file(host, inventory_dir)
+                except KeyError:
+                    pass
         else:
             files = (
                 source_map.hosts.get(change.subject)
@@ -451,7 +476,28 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
 
     file_change_counts: dict[Path, int] = {}
 
-    for target in sorted(touched):
+    # Separate group_vars files (raw YAML update) from inventory files.
+    gvars_changes: list[Change] = [
+        c for c in changes
+        if c.kind == ChangeKind.GROUP_VAR_SET
+        and c.target_file is not None
+        and GROUP_VARS_DIR in c.target_file.parts
+        and c.payload is not None
+    ]
+    gvars_targets: set[Path] = {c.target_file for c in gvars_changes if c.target_file}
+    inv_targets = touched - gvars_targets
+
+    # ── group_vars files (raw YAML key update) ──────────────────────────────
+    for target in sorted(gvars_targets):
+        count = 0
+        for c in gvars_changes:
+            if c.target_file == target and c.payload:
+                _update_raw_yaml_key(target, c.payload["key"], c.payload["value"])
+                count += 1
+        file_change_counts[target] = count
+
+    # ── Inventory files ──────────────────────────────────────────────────────
+    for target in sorted(inv_targets):
         # Re-parse this file in isolation to get its current on-disk state
         file_inv = Inventory()
         try:
@@ -495,6 +541,20 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
                 file_inv.add_group(group_name, vars=grp.vars)
                 count += 1
 
+        # Apply HOST_VAR_SET: overwrite the named variable on the host
+        for c in changes:
+            if (
+                c.kind == ChangeKind.HOST_VAR_SET
+                and c.target_file == target
+                and c.payload is not None
+            ):
+                try:
+                    h = file_inv.get_host(c.subject)
+                    h.vars[c.payload["key"]] = c.payload["value"]
+                    count += 1
+                except KeyError:
+                    pass
+
         target.parent.mkdir(parents=True, exist_ok=True)
         dump_inventory(file_inv, target)
         file_change_counts[target] = count
@@ -506,6 +566,23 @@ def commit(inventory_dir: Path) -> dict[Path, int]:
     _save_inv_cache(fresh, inventory_dir)
 
     return file_change_counts
+
+
+def _update_raw_yaml_key(filepath: Path, key: str, value: Any) -> None:
+    """Update a single top-level *key* in a raw YAML file.
+
+    Used for ``group_vars/`` files that are not parsed as inventories.
+    The file is created (with parent directories) if it does not yet exist.
+    """
+    import yaml as _yaml
+    existing: dict[str, Any] = {}
+    if filepath.exists():
+        with filepath.open("r", encoding="utf-8") as fh:
+            existing = _yaml.safe_load(fh) or {}
+    existing[key] = value
+    filepath.parent.mkdir(parents=True, exist_ok=True)
+    with filepath.open("w", encoding="utf-8") as fh:
+        _yaml.dump(existing, fh, default_flow_style=False, allow_unicode=True)
 
 
 def diff_summary(staging: StagingArea) -> list[tuple[Change, Path | None]]:

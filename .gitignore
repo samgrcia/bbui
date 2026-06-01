@@ -4,3 +4,5 @@ __pycache__
 .DS_Store
 site/
 samples/bluebanquise-full/
+TODO.md
+ANALYSIS.md

@@ -234,15 +234,27 @@ def _load_group_vars(inventory: Inventory, group_vars_dir: Path) -> None:
       the merge is deterministic.
 
     The special name ``all`` applies vars to every group currently known to
-    the inventory (it does *not* create a new group).
+    the inventory **and** stores the merged vars on the ``all`` group object
+    itself (so that ``inventory._sync_networks_from_vars()`` can read them).
+
+    When the ``networks`` key is present in an ``all`` entry, the source file
+    path is recorded on ``inventory._networks_source`` (last file wins).
     """
     if not group_vars_dir.is_dir():
         return
 
-    def _apply(group_name: str, vars_dict: dict[str, Any]) -> None:
+    def _apply(group_name: str, vars_dict: dict[str, Any], source: Path | None = None) -> None:
         if group_name == "all":
+            # Store in the "all" Group object so _sync_networks_from_vars can read it.
+            all_group = inventory._ensure_group("all")
+            all_group.vars.update(vars_dict)
+            # Track the file that provided the "networks" key.
+            if source is not None and "networks" in vars_dict:
+                inventory._networks_source = source
+            # Also spread to all other groups (Ansible-compatible behaviour).
             for group in inventory.list_groups():
-                group.vars.update(vars_dict)
+                if group.name != "all":
+                    group.vars.update(vars_dict)
         else:
             inventory._ensure_group(group_name).vars.update(vars_dict)
 
@@ -254,16 +266,22 @@ def _load_group_vars(inventory: Inventory, group_vars_dir: Path) -> None:
         if entry.is_file() and entry.suffix.lower() in YAML_SUFFIXES:
             # File layout: group_vars/webservers.yml
             group_name = entry.stem
-            _apply(group_name, _read_yaml(entry))
+            _apply(group_name, _read_yaml(entry), source=entry)
 
         elif entry.is_dir():
             # Directory layout: group_vars/webservers/main.yml …
+            # Files in subdirectories are also included (Ansible behaviour).
             group_name = entry.name
             merged: dict[str, Any] = {}
-            for yaml_file in sorted(entry.glob("*.yml")) + sorted(entry.glob("*.yaml")):  # type: ignore[operator]
-                merged.update(_read_yaml(yaml_file))
+            last_networks_source: Path | None = None
+            all_yaml = sorted(entry.rglob("*.yml")) + sorted(entry.rglob("*.yaml"))  # type: ignore[operator]
+            for yaml_file in all_yaml:
+                data = _read_yaml(yaml_file)
+                merged.update(data)
+                if group_name == "all" and "networks" in data:
+                    last_networks_source = yaml_file
             if merged:
-                _apply(group_name, merged)
+                _apply(group_name, merged, source=last_networks_source)
 
 
 # ===========================================================================
@@ -374,6 +392,10 @@ def load_inventory_dir(directory: str | Path) -> Inventory:
     # Apply group_vars/ on top
     group_vars_path = dirpath / GROUP_VARS_DIR
     _load_group_vars(inventory, group_vars_path)
+
+    # Build the synthetic "all" group and populate inventory.networks.
+    inventory._create_all_group()
+    inventory._sync_networks_from_vars()
 
     return inventory
 
