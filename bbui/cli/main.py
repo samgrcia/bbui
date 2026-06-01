@@ -20,7 +20,7 @@ from bbui.backend.nodeset import expand_nodeset, fold_nodeset
 from bbui.backend.parser import load_inventory, load_inventory_dir
 from bbui.backend.staging import (
     Change, ChangeKind,
-    affected_files, commit, discard, diff_summary, grouped_changes,
+    affected_files, clear_cache, commit, discard, diff_summary, grouped_changes,
     has_pending, load_cache, load_inventory_or_cache,
     stage,
 )
@@ -232,6 +232,29 @@ def cmd_commit(
     for filepath, count in sorted(counts.items()):
         rprint(f"[green]✓[/green] {filepath}  ([dim]{count} change(s)[/dim])")
     rprint("[bold green]Commit complete.[/bold green]")
+
+
+@app.command("clear")
+def cmd_cache_clear(
+    inventory_dir: InventoryDirOption = None,
+    force: Annotated[bool, typer.Option("--force", "-f", help="Skip confirmation.")] = False,
+) -> None:
+    """Delete all .bbui/ cache files (staging and read cache)."""
+    _, inv_dir = _resolve_inventory(None, inventory_dir)
+    inv_dir = _require_dir(inv_dir)
+
+    bbui_dir = inv_dir / ".bbui"
+    if not bbui_dir.exists() or not any(bbui_dir.iterdir()):
+        rprint("[dim]No cache files found.[/dim]")
+        return
+
+    if not force:
+        typer.confirm("Delete all cache files under .bbui/?", abort=True)
+
+    removed = clear_cache(inv_dir)
+    for p in removed:
+        rprint(f"[yellow]Deleted:[/yellow] {p}")
+    rprint("[bold green]Cache cleared.[/bold green]")
 
 
 @app.command("discard")
@@ -746,6 +769,514 @@ def _format_value(value: object) -> str:
     if isinstance(value, list):
         return "\n".join(f"[{i}] {item}" for i, item in enumerate(value))
     return str(value) if value is not None else ""
+
+
+# ===========================================================================
+# HOST NIC commands  (bbcli host nic …)
+# ===========================================================================
+
+nic_app = typer.Typer(help="Manage host network interfaces (network_interfaces).", no_args_is_help=True)
+host_app.add_typer(nic_app, name="nic")
+
+
+def _increment_ip(ip: str, offset: int) -> str:
+    """Return *ip* incremented by *offset* (e.g. '10.0.3.1' + 2 → '10.0.3.3')."""
+    import ipaddress as _ip
+    return str(_ip.ip_address(int(_ip.ip_address(ip)) + offset))
+
+
+def _warn_ip_issues(inv: Inventory) -> None:
+    """Print Rich warnings for any IP / subnet inconsistencies found."""
+    from bbui.backend.network import validate_network_interfaces
+    issues = validate_network_interfaces(inv)
+    for issue in issues:
+        rprint(f"[yellow]⚠ IP warning:[/yellow] {issue}")
+
+
+def _stage_or_write_nic(
+    inv: Inventory,
+    changes: list[Change],
+    inv_file: Path | None,
+    inv_dir: Path | None,
+) -> None:
+    """Stage or directly write NIC changes (mirrors host_add pattern)."""
+    if inv_dir is not None:
+        existing = load_cache(inv_dir) if has_pending(inv_dir) else None
+        stage(inv, changes, inv_dir, existing)
+    else:
+        from bbui.backend.parser import dump_inventory
+        dump_inventory(inv, inv_file)  # type: ignore[arg-type]
+
+
+@nic_app.command("add")
+def nic_add(
+    nodeset: Annotated[str, typer.Argument(help="Hostname or NodeSet (e.g. c[001:010]).")],
+    interface: Annotated[str, typer.Option("--interface", "-n", help="Interface name (unique key, e.g. enp1s0).")],
+    ip4:     Annotated[Optional[str], typer.Option("--ip4",     help="IPv4 address. Incremented per host when a NodeSet is used.")] = None,
+    mac:     Annotated[Optional[str], typer.Option("--mac",     help="MAC address.")] = None,
+    network: Annotated[Optional[str], typer.Option("--network", help="Network name (must match a key in 'networks').")] = None,
+    nic_type: Annotated[Optional[str], typer.Option("--type",   help="Interface type (ethernet, bond, …).")] = None,
+    gw4:     Annotated[Optional[str], typer.Option("--gw4",     help="IPv4 gateway.")] = None,
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """Add a network interface to one or more hosts.
+
+    When a NodeSet is used with --ip4, the address is incremented for each host:
+    c[001:003] --ip4 10.0.3.1  →  c001=10.0.3.1, c002=10.0.3.2, c003=10.0.3.3
+    """
+    try:
+        hostnames = expand_nodeset(nodeset)
+    except ValueError as exc:
+        rprint(f"[red]Invalid nodeset:[/red] {exc}")
+        raise typer.Exit(1)
+
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+    changes: list[Change] = []
+
+    for idx, hostname in enumerate(hostnames):
+        try:
+            host = inv.get_host(hostname)
+        except KeyError:
+            rprint(f"[red]Host not found:[/red] {hostname}")
+            raise typer.Exit(1)
+
+        nics: list[dict[str, Any]] = list(host.vars.get("network_interfaces") or [])
+
+        # Uniqueness check
+        if any(n.get("interface") == interface for n in nics):
+            rprint(f"[red]Error:[/red] interface '{interface}' already exists on host '{hostname}'.")
+            raise typer.Exit(1)
+
+        nic: dict[str, Any] = {"interface": interface}
+        if ip4 is not None:
+            nic["ip4"] = _increment_ip(ip4, idx) if len(hostnames) > 1 else ip4
+        if mac is not None:
+            nic["mac"] = mac
+        if network is not None:
+            nic["network"] = network
+        if nic_type is not None:
+            nic["type"] = nic_type
+        if gw4 is not None:
+            nic["gw4"] = gw4
+
+        nics.append(nic)
+        host.vars["network_interfaces"] = nics
+
+        changes.append(Change(
+            kind=ChangeKind.HOST_VAR_SET,
+            subject=hostname,
+            detail=f"nic add {interface}",
+            payload={"key": "network_interfaces", "value": nics},
+        ))
+
+    _warn_ip_issues(inv)
+    _stage_or_write_nic(inv, changes, inv_file, inv_dir)
+
+    action = "Staged" if inv_dir else "Written"
+    suffix = "  [dim](bbcli commit to write)[/dim]" if inv_dir else ""
+    rprint(f"[green]{action}:[/green] interface '{interface}' added to {len(hostnames)} host(s){suffix}")
+
+
+@nic_app.command("remove")
+def nic_remove(
+    nodeset: Annotated[str, typer.Argument(help="Hostname or NodeSet.")],
+    interface: Annotated[str, typer.Option("--interface", "-n", help="Interface name to remove.")],
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """Remove a network interface from one or more hosts."""
+    try:
+        hostnames = expand_nodeset(nodeset)
+    except ValueError as exc:
+        rprint(f"[red]Invalid nodeset:[/red] {exc}")
+        raise typer.Exit(1)
+
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+    changes: list[Change] = []
+
+    for hostname in hostnames:
+        try:
+            host = inv.get_host(hostname)
+        except KeyError:
+            rprint(f"[red]Host not found:[/red] {hostname}")
+            raise typer.Exit(1)
+
+        nics: list[dict[str, Any]] = list(host.vars.get("network_interfaces") or [])
+        new_nics = [n for n in nics if n.get("interface") != interface]
+
+        if len(new_nics) == len(nics):
+            rprint(f"[red]Error:[/red] interface '{interface}' not found on host '{hostname}'.")
+            raise typer.Exit(1)
+
+        host.vars["network_interfaces"] = new_nics
+        changes.append(Change(
+            kind=ChangeKind.HOST_VAR_SET,
+            subject=hostname,
+            detail=f"nic remove {interface}",
+            payload={"key": "network_interfaces", "value": new_nics},
+        ))
+
+    _stage_or_write_nic(inv, changes, inv_file, inv_dir)
+    action = "Staged" if inv_dir else "Written"
+    suffix = "  [dim](bbcli commit to write)[/dim]" if inv_dir else ""
+    rprint(f"[yellow]{action}:[/yellow] interface '{interface}' removed from {len(hostnames)} host(s){suffix}")
+
+
+@nic_app.command("set")
+def nic_set(
+    nodeset:   Annotated[str, typer.Argument(help="Hostname or NodeSet.")],
+    interface: Annotated[str, typer.Option("--interface", "-n", help="Interface name (key).")],
+    key:       Annotated[str, typer.Option("--key",       "-k", help="Field to update (e.g. ip4, mac, network).")],
+    value:     Annotated[str, typer.Option("--value",     "-v", help="New value for the field.")],
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """Update a field on a network interface for one or more hosts."""
+    try:
+        hostnames = expand_nodeset(nodeset)
+    except ValueError as exc:
+        rprint(f"[red]Invalid nodeset:[/red] {exc}")
+        raise typer.Exit(1)
+
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+    changes: list[Change] = []
+
+    for hostname in hostnames:
+        try:
+            host = inv.get_host(hostname)
+        except KeyError:
+            rprint(f"[red]Host not found:[/red] {hostname}")
+            raise typer.Exit(1)
+
+        nics: list[dict[str, Any]] = list(host.vars.get("network_interfaces") or [])
+        nic = next((n for n in nics if n.get("interface") == interface), None)
+
+        if nic is None:
+            rprint(f"[red]Error:[/red] interface '{interface}' not found on host '{hostname}'.")
+            raise typer.Exit(1)
+
+        nic[key] = value
+        host.vars["network_interfaces"] = nics
+        changes.append(Change(
+            kind=ChangeKind.HOST_VAR_SET,
+            subject=hostname,
+            detail=f"nic set {interface}.{key}",
+            payload={"key": "network_interfaces", "value": nics},
+        ))
+
+    _warn_ip_issues(inv)
+    _stage_or_write_nic(inv, changes, inv_file, inv_dir)
+    action = "Staged" if inv_dir else "Written"
+    suffix = "  [dim](bbcli commit to write)[/dim]" if inv_dir else ""
+    rprint(f"[green]{action}:[/green] {interface}.{key} = {value} on {len(hostnames)} host(s){suffix}")
+
+
+@nic_app.command("list")
+def nic_list(
+    nodeset: Annotated[str, typer.Argument(help="Hostname or NodeSet.")],
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """List all network interfaces for one or more hosts."""
+    try:
+        hostnames = expand_nodeset(nodeset)
+    except ValueError as exc:
+        rprint(f"[red]Invalid nodeset:[/red] {exc}")
+        raise typer.Exit(1)
+
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+
+    for hostname in hostnames:
+        try:
+            host = inv.get_host(hostname)
+        except KeyError:
+            rprint(f"[yellow]Not found:[/yellow] {hostname}")
+            continue
+
+        nics: list[dict[str, Any]] = host.vars.get("network_interfaces") or []
+        rprint(f"[bold cyan]{hostname}[/bold cyan]  [dim]({len(nics)} interface(s))[/dim]")
+
+        if not nics:
+            rprint("  [dim]none[/dim]")
+            continue
+
+        table = Table(show_lines=True, box=None, padding=(0, 1))
+        table.add_column("Interface", style="cyan",    no_wrap=True)
+        table.add_column("IP4",       style="green",   no_wrap=True)
+        table.add_column("Network",   style="magenta", no_wrap=True)
+        table.add_column("Type",      style="dim",     no_wrap=True)
+        table.add_column("MAC",       style="dim",     no_wrap=True)
+
+        for nic in nics:
+            table.add_row(
+                str(nic.get("interface", "")),
+                str(nic.get("ip4", "")),
+                str(nic.get("network", "")),
+                str(nic.get("type", "")),
+                str(nic.get("mac", "")),
+            )
+        rprint(table)
+
+
+# ===========================================================================
+# NETWORK commands  (bbcli network …)
+# ===========================================================================
+
+network_app = typer.Typer(help="Manage inventory networks.", no_args_is_help=True)
+app.add_typer(network_app, name="network")
+
+
+def _default_networks_file(inv_dir: Path) -> Path:
+    """Return the default path for networks.yml when none is loaded from disk."""
+    return inv_dir / "group_vars" / "all" / "general_settings" / "networks.yml"
+
+
+def _networks_as_dict(inv: Inventory) -> dict[str, Any]:
+    """Serialize inventory.networks to a plain dict (for YAML storage)."""
+    return {name: net.to_dict() for name, net in inv.networks.items()}
+
+
+def _stage_network_change(
+    inv: Inventory,
+    inv_dir: Path,
+    detail: str,
+) -> None:
+    """Build and stage a GROUP_VAR_SET change for the networks variable."""
+    target = inv._networks_source or _default_networks_file(inv_dir)
+    change = Change(
+        kind=ChangeKind.GROUP_VAR_SET,
+        subject="all",
+        detail=detail,
+        target_file=target,
+        payload={"key": "networks", "value": _networks_as_dict(inv)},
+    )
+    existing = load_cache(inv_dir) if has_pending(inv_dir) else None
+    stage(inv, [change], inv_dir, existing)
+
+
+@network_app.command("add")
+def network_add(
+    name:   Annotated[str, typer.Argument(help="Network name (e.g. net-admin).")],
+    subnet: Annotated[str, typer.Option("--subnet", help="Base subnet address (e.g. 10.0.3.0).")],
+    prefix: Annotated[int, typer.Option("--prefix", help="Prefix length (e.g. 16).")],
+    gateway:        Annotated[Optional[str], typer.Option("--gateway",        help="Default gateway.")] = None,
+    netmask:        Annotated[Optional[str], typer.Option("--netmask",        help="Subnet mask.")] = None,
+    broadcast:      Annotated[Optional[str], typer.Option("--broadcast",      help="Broadcast address.")] = None,
+    dhcp_server:    Annotated[bool,          typer.Option("--dhcp-server/--no-dhcp-server", help="Enable DHCP server.")] = False,
+    dns_server:     Annotated[bool,          typer.Option("--dns-server/--no-dns-server",   help="Enable DNS server.")] = False,
+    shared_network: Annotated[Optional[str], typer.Option("--shared-network", help="DHCP shared network name.")] = None,
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """Add a network to the inventory."""
+    from bbui.backend.network import Network
+
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+
+    if name in inv.networks:
+        rprint(f"[red]Error:[/red] network '{name}' already exists.")
+        raise typer.Exit(1)
+
+    net = Network(
+        name=name, subnet=subnet, prefix=prefix,
+        gateway=gateway, netmask=netmask, broadcast=broadcast,
+        dhcp_server=dhcp_server, dns_server=dns_server,
+        shared_network=shared_network,
+    )
+    inv.networks[name] = net
+
+    # Keep the "all" group vars in sync
+    all_grp = inv._ensure_group("all")
+    all_grp.vars.setdefault("networks", {})
+    all_grp.vars["networks"][name] = net.to_dict()
+
+    if inv_dir is not None:
+        _stage_network_change(inv, inv_dir, f"network add {name}")
+        rprint(f"[green]Staged:[/green] network '{name}' added  [dim](bbcli commit to write)[/dim]")
+    else:
+        rprint("[red]Error:[/red] --inventory-dir (-I) is required to persist network changes.")
+        raise typer.Exit(1)
+
+
+@network_app.command("remove")
+def network_remove(
+    name: Annotated[str, typer.Argument(help="Network name to remove.")],
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """Remove a network from the inventory."""
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+
+    if name not in inv.networks:
+        rprint(f"[red]Error:[/red] network '{name}' not found.")
+        raise typer.Exit(1)
+
+    del inv.networks[name]
+    all_grp = inv._groups.get("all")
+    if all_grp and isinstance(all_grp.vars.get("networks"), dict):
+        all_grp.vars["networks"].pop(name, None)
+
+    if inv_dir is not None:
+        _stage_network_change(inv, inv_dir, f"network remove {name}")
+        rprint(f"[yellow]Staged:[/yellow] network '{name}' removed  [dim](bbcli commit to write)[/dim]")
+    else:
+        rprint("[red]Error:[/red] --inventory-dir (-I) is required to persist network changes.")
+        raise typer.Exit(1)
+
+
+@network_app.command("set")
+def network_set(
+    name:  Annotated[str, typer.Argument(help="Network name.")],
+    key:   Annotated[str, typer.Option("--key",   "-k", help="Field to update (e.g. gateway, prefix).")],
+    value: Annotated[str, typer.Option("--value", "-v", help="New value.")],
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """Update a field on an existing network."""
+    from bbui.backend.network import Network
+
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+
+    if name not in inv.networks:
+        rprint(f"[red]Error:[/red] network '{name}' not found.")
+        raise typer.Exit(1)
+
+    net = inv.networks[name]
+    # Cast to int for numeric fields
+    if key == "prefix":
+        setattr(net, key, int(value))
+    elif key in ("dhcp_server", "dns_server"):
+        setattr(net, key, value.lower() in ("true", "1", "yes"))
+    else:
+        setattr(net, key, value)
+
+    # Sync to "all" group vars
+    all_grp = inv._groups.get("all")
+    if all_grp:
+        all_grp.vars.setdefault("networks", {})
+        all_grp.vars["networks"][name] = net.to_dict()
+
+    if inv_dir is not None:
+        _stage_network_change(inv, inv_dir, f"network set {name}.{key}")
+        rprint(f"[green]Staged:[/green] {name}.{key} = {value}  [dim](bbcli commit to write)[/dim]")
+    else:
+        rprint("[red]Error:[/red] --inventory-dir (-I) is required to persist network changes.")
+        raise typer.Exit(1)
+
+
+@network_app.command("list")
+def network_list(
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """List all networks defined in the inventory."""
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+
+    if not inv.networks:
+        rprint("[dim]No networks defined.[/dim]")
+        return
+
+    if inv_dir and has_pending(inv_dir):
+        rprint("[yellow]⚠ Showing staged inventory (uncommitted changes present)[/yellow]")
+
+    table = Table(title="Networks", show_lines=True)
+    table.add_column("Name",    style="cyan",    no_wrap=True)
+    table.add_column("Subnet",  style="green",   no_wrap=True)
+    table.add_column("Prefix",  style="green",   no_wrap=True)
+    table.add_column("Gateway", style="magenta", no_wrap=True)
+    table.add_column("DHCP",    style="dim",     no_wrap=True)
+    table.add_column("DNS",     style="dim",     no_wrap=True)
+
+    for name, net in sorted(inv.networks.items()):
+        table.add_row(
+            name,
+            net.subnet,
+            str(net.prefix),
+            net.gateway or "",
+            "✓" if net.dhcp_server else "",
+            "✓" if net.dns_server  else "",
+        )
+
+    rprint(table)
+
+
+@network_app.command("show")
+def network_show(
+    name: Annotated[str, typer.Argument(help="Network name to inspect.")],
+    inventory: InventoryOption = None,
+    inventory_dir: InventoryDirOption = None,
+) -> None:
+    """Show full details of a network."""
+    inv_file, inv_dir = _resolve_inventory(inventory, inventory_dir)
+    if inv_file is None and inv_dir is None:
+        _no_inventory_error()
+
+    inv = _load(inv_file, inv_dir)
+
+    if name not in inv.networks:
+        rprint(f"[red]Error:[/red] network '{name}' not found.")
+        raise typer.Exit(1)
+
+    net = inv.networks[name]
+    rprint(f"[bold cyan]{net.name}[/bold cyan]")
+
+    table = Table(show_header=False, box=None, padding=(0, 1))
+    table.add_column("Field", style="dim")
+    table.add_column("Value")
+
+    table.add_row("subnet",         net.subnet)
+    table.add_row("prefix",         str(net.prefix))
+    if net.netmask:
+        table.add_row("netmask",    net.netmask)
+    if net.broadcast:
+        table.add_row("broadcast",  net.broadcast)
+    if net.gateway:
+        table.add_row("gateway",    net.gateway)
+    table.add_row("dhcp_server",    "true" if net.dhcp_server else "false")
+    table.add_row("dns_server",     "true" if net.dns_server  else "false")
+    if net.shared_network:
+        table.add_row("shared_network", net.shared_network)
+    if net.firewall:
+        table.add_row("firewall",   str(net.firewall))
+    if net.services is not None:
+        table.add_row("services",   str(net.services))
+    if inv._networks_source:
+        table.add_row("source file", str(inv._networks_source))
+
+    rprint(table)
 
 
 if __name__ == "__main__":

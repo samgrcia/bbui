@@ -3,7 +3,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
+
+from bbui.backend.network import Network
 
 
 @dataclass
@@ -55,6 +58,10 @@ class Inventory:
     def __init__(self) -> None:
         self._hosts: dict[str, Host] = {}
         self._groups: dict[str, Group] = {}
+        # Typed view of the ``networks`` variable from group_vars/all.
+        self.networks: dict[str, Network] = {}
+        # File from which ``networks`` was loaded (None if not yet persisted).
+        self._networks_source: Path | None = None
 
     # ------------------------------------------------------------------
     # Host operations
@@ -121,6 +128,51 @@ class Inventory:
         if group_name not in self._groups:
             self._groups[group_name] = Group(name=group_name)
         return self._groups[group_name]
+
+    # ------------------------------------------------------------------
+    # Synthetic "all" group
+    # ------------------------------------------------------------------
+
+    def _create_all_group(self) -> None:
+        """Create (or update) the synthetic ``all`` group.
+
+        After loading, the ``all`` group contains every host in the inventory.
+        Idempotent: safe to call multiple times.
+        """
+        all_group = self._ensure_group("all")
+        for host in self._hosts.values():
+            host.add_group("all")
+            all_group.add_host(host.name)
+
+    # ------------------------------------------------------------------
+    # Networks synchronisation
+    # ------------------------------------------------------------------
+
+    def _sync_networks_from_vars(self) -> None:
+        """Populate ``self.networks`` from the ``all`` group's ``networks`` var.
+
+        Call this after ``_create_all_group()`` and ``_load_group_vars()``.
+        """
+        all_grp = self._groups.get("all")
+        if all_grp is None:
+            return
+        raw: Any = all_grp.vars.get("networks")
+        if not isinstance(raw, dict):
+            return
+        for name, data in raw.items():
+            if isinstance(data, dict):
+                self.networks[name] = Network.from_dict(name, data)
+
+    # ------------------------------------------------------------------
+    # Pickle compatibility
+    # ------------------------------------------------------------------
+
+    def __setstate__(self, state: dict[str, Any]) -> None:
+        self.__dict__.update(state)
+        if not hasattr(self, "networks"):
+            self.networks = {}
+        if not hasattr(self, "_networks_source"):
+            self._networks_source = None
 
     def __repr__(self) -> str:
         return f"Inventory(hosts={len(self._hosts)}, groups={len(self._groups)})"

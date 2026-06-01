@@ -94,11 +94,19 @@ class BbInventory(Inventory):
         # Tracks the source nodes file for each host loaded from disk.
         # New hosts (not yet on disk) are absent from this dict.
         self._host_source: dict[str, Path] = {}
+        # Keys inherited from group_vars/all: these are spread to every group
+        # for in-memory reads but must NOT be written back to the INI files.
+        # Populated by load() via a before/after snapshot around _load_group_vars().
+        self._inherited_group_var_keys: dict[str, set[str]] = {}
 
     def __setstate__(self, state: dict) -> None:
+        # BbInventory-specific defaults (for caches created before these fields existed)
         state.setdefault("_host_source", {})
         state.setdefault("_group_source", {})
-        self.__dict__.update(state)
+        state.setdefault("_inherited_group_var_keys", {})
+        # Delegate to Inventory.__setstate__ which handles networks/_networks_source
+        # and performs self.__dict__.update(state).
+        super().__setstate__(state)
 
     # -----------------------------------------------------------------------
     # Overridden mutating methods
@@ -194,12 +202,14 @@ class BbInventory(Inventory):
         * Writes ``cluster/nodes/<fn_suffix>.yml`` for every fn_* group that
           has at least one host.
         * Writes ``cluster/groups/{fn,hw,os,others,...}`` for every group.
+        * Writes ``group_vars/`` files for ``networks`` when present.
 
         Returns the list of files written.
         """
         written: list[Path] = []
         written.extend(self._write_nodes(inventory_dir))
         written.extend(self._write_groups(inventory_dir))
+        written.extend(self._write_group_vars(inventory_dir))
         return written
 
     def _target_nodes_file(self, host: Host, inventory_dir: Path) -> Path:
@@ -257,8 +267,11 @@ class BbInventory(Inventory):
         groups_dir.mkdir(parents=True, exist_ok=True)
 
         # Bucket groups by their target file.
+        # The synthetic "all" group is never persisted to a group file.
         file_buckets: dict[Path, list[Group]] = {}
         for group in self.list_groups():
+            if group.name == "all":
+                continue
             target = self.group_file(group.name, inventory_dir)
             file_buckets.setdefault(target, []).append(group)
 
@@ -271,10 +284,14 @@ class BbInventory(Inventory):
                 for pattern in fold_ansible(group.hosts):
                     lines.append(pattern)
                 lines.append("")
-                # [group:vars]
-                if group.vars:
+                # [group:vars] — exclude keys inherited from group_vars/all
+                # (they are tracked in _inherited_group_var_keys and must not
+                # be written back into the cluster/groups/* INI files).
+                inherited = self._inherited_group_var_keys.get(group.name, set())
+                write_vars = {k: v for k, v in group.vars.items() if k not in inherited}
+                if write_vars:
                     lines.append(f"[{group.name}:vars]")
-                    for k, v in sorted(group.vars.items()):
+                    for k, v in sorted(write_vars.items()):
                         lines.append(f"{k}={v}")
                     lines.append("")
                 # [group:children]
@@ -290,6 +307,31 @@ class BbInventory(Inventory):
 
         return written
 
+    def _write_group_vars(self, inventory_dir: Path) -> list[Path]:
+        """Write ``networks`` back to its source group_vars file.
+
+        If no source file is known (e.g. the user added networks from scratch),
+        the default path ``group_vars/all/general_settings/networks.yml`` is used.
+        Returns an empty list when there are no networks to write.
+        """
+        if not self.networks:
+            return []
+        target = self._networks_source or (
+            inventory_dir / "group_vars" / "all" / "general_settings" / "networks.yml"
+        )
+        target.parent.mkdir(parents=True, exist_ok=True)
+        networks_dict = {
+            name: net.to_dict() for name, net in sorted(self.networks.items())
+        }
+        with target.open("w", encoding="utf-8") as fh:
+            yaml.dump(
+                {"networks": networks_dict},
+                fh,
+                default_flow_style=False,
+                allow_unicode=True,
+            )
+        return [target]
+
     # -----------------------------------------------------------------------
     # Load
     # -----------------------------------------------------------------------
@@ -304,13 +346,28 @@ class BbInventory(Inventory):
         3. Apply ``group_vars/`` (standard Ansible behaviour).
         """
         inv: BbInventory = cls.__new__(cls)
-        Inventory.__init__(inv)
-        inv._group_source = {}
-        inv._host_source = {}
+        BbInventory.__init__(inv)  # initialises all BbInventory attrs
 
         pending_vars = inv._collect_node_vars(inventory_dir)
         inv._load_groups(inventory_dir, pending_vars)
+
+        # Snapshot var keys present on each group BEFORE applying group_vars/.
+        # Any key added by group_vars/all is "inherited" and must not be
+        # written back to the cluster/groups/* INI files.
+        pre_snap: dict[str, set[str]] = {
+            g.name: set(g.vars.keys()) for g in inv.list_groups()
+        }
+
         _load_group_vars(inv, inventory_dir / "group_vars")
+
+        # Record inherited keys (appeared after group_vars/ was applied).
+        for group in inv.list_groups():
+            inherited = set(group.vars.keys()) - pre_snap.get(group.name, set())
+            if inherited:
+                inv._inherited_group_var_keys[group.name] = inherited
+
+        inv._create_all_group()
+        inv._sync_networks_from_vars()
         return inv
 
     def _collect_node_vars(self, inventory_dir: Path) -> dict[str, dict[str, Any]]:
